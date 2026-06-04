@@ -34,3 +34,32 @@
 5. Close with the next phase.
 
    Phase 2 adds grounded knowledge retrieval with citations and richer simulation behavior.
+
+## Terminal Simulation Demo
+
+1. Run the seeded SRE incident.
+
+   ```powershell
+   cd backend
+   python -m app.run_scenario --role ROLE-SRE
+   ```
+
+2. Call out the five visible parts of each turn.
+
+   - Situation.
+   - Learner decision.
+   - NPC reactions.
+   - Consequence delta.
+   - Citations.
+
+3. Highlight the consequence cascade.
+
+   The first turn intentionally restarts checkout during database uncertainty, increasing severity and revenue-at-risk.
+
+4. Highlight the recovery arc.
+
+   Later turns freeze writes, escalate incident command, correlate telemetry, and restore traffic gradually.
+
+5. Close on assessment.
+
+   The final section prints competence score, dimension scores, failure modes, and a coach debrief.

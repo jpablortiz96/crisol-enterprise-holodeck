@@ -1,0 +1,149 @@
+import json
+from pathlib import Path
+from typing import Any
+
+from app.grounding.local_knowledge import answer_with_citations
+
+
+DATA_DIR = Path(__file__).resolve().parents[1] / "data"
+SCENARIO_FILE = DATA_DIR / "scenarios.json"
+
+
+AUTO_DECISION_PLAN = [
+    {
+        "id": "DEC-RESTART-CHECKOUT",
+        "label": "Restart checkout service",
+        "description": "Restart checkout workers before resolving database writer uncertainty.",
+        "competencies": ["SK-incident-triage"],
+        "action_type": "restart_checkout",
+    },
+    {
+        "id": "DEC-FREEZE-WRITES",
+        "label": "Freeze writes and identify primary database writer",
+        "description": "Pause risky write paths, confirm the primary writer, and protect order consistency.",
+        "competencies": ["SK-incident-triage", "SK-database-recovery", "SK-escalation-judgment"],
+        "action_type": "freeze_db_writes",
+    },
+    {
+        "id": "DEC-ESCALATE-COMMAND",
+        "label": "Escalate to database lead and incident command",
+        "description": "Create a shared incident channel, assign owners, and communicate risk checkpoints.",
+        "competencies": ["SK-communication", "SK-escalation-judgment"],
+        "action_type": "escalate_incident_command",
+    },
+    {
+        "id": "DEC-CORRELATE-SIGNALS",
+        "label": "Correlate traces across checkout, orders, and database",
+        "description": "Use observability evidence to validate whether writes and retries are stabilizing.",
+        "competencies": ["SK-observability", "SK-incident-triage"],
+        "action_type": "correlate_observability",
+    },
+    {
+        "id": "DEC-GRADUAL-RESTORE",
+        "label": "Restore traffic gradually after consistency checks",
+        "description": "Reopen traffic in stages after database ownership and order integrity checks pass.",
+        "competencies": ["SK-database-recovery", "SK-communication"],
+        "action_type": "gradual_restore",
+    },
+]
+
+
+DISTRACTOR_OPTIONS = [
+    {
+        "id": "DEC-IGNORE-DB",
+        "label": "Ignore database symptoms",
+        "description": "Treat the issue as a checkout-only outage and defer database investigation.",
+        "competencies": ["SK-incident-triage"],
+        "action_type": "ignore_database_symptoms",
+    },
+    {
+        "id": "DEC-FAST-FAILOVER",
+        "label": "Fail over database immediately",
+        "description": "Force failover before confirming replication health or writer ownership.",
+        "competencies": ["SK-database-recovery"],
+        "action_type": "failover_without_validation",
+    },
+]
+
+
+TURN_QUERIES = [
+    "checkout outage database recovery split brain",
+    "database recovery identify primary writer",
+    "incident escalation stakeholder communication",
+    "checkout observability orders database",
+    "database recovery traffic restoration",
+]
+
+
+class ScenarioDirector:
+    def __init__(self, scenario_file: Path = SCENARIO_FILE) -> None:
+        self.scenario_file = scenario_file
+
+    def _load_scenarios(self) -> list[dict[str, Any]]:
+        with self.scenario_file.open("r", encoding="utf-8") as source:
+            return json.load(source)
+
+    def select_scenario(self, role_id: str, scenario_seed: str | None = None) -> dict[str, Any]:
+        scenarios = self._load_scenarios()
+        if scenario_seed:
+            for scenario in scenarios:
+                if scenario["id"] == scenario_seed:
+                    return scenario
+            raise ValueError(f"Unknown scenario seed: {scenario_seed}")
+
+        for scenario in scenarios:
+            if scenario["role_id"] == role_id:
+                return scenario
+
+        raise ValueError(f"No scenario found for role: {role_id}")
+
+    def start_session(self, role_id: str, scenario_seed: str | None = None) -> dict[str, Any]:
+        scenario = self.select_scenario(role_id, scenario_seed)
+        intro = answer_with_citations("checkout outage split brain database recovery", top_k=3)
+        return {
+            "session_id": f"SES-{role_id}-{scenario['id']}",
+            "role_id": role_id,
+            "scenario": {**scenario, "intro": intro["answer"], "citations": intro["citations"]},
+            "turn_index": 0,
+            "min_turns": 5,
+            "max_turns": 5,
+            "severity": 4,
+            "impacted_systems": scenario["impacted_systems"],
+            "history": [],
+        }
+
+    def build_turn_context(self, state: dict[str, Any]) -> dict[str, Any]:
+        turn_index = state["turn_index"]
+        query = TURN_QUERIES[min(turn_index, len(TURN_QUERIES) - 1)]
+        grounding = answer_with_citations(query, top_k=3)
+        auto_decision = AUTO_DECISION_PLAN[min(turn_index, len(AUTO_DECISION_PLAN) - 1)]
+        available_options = [auto_decision, *DISTRACTOR_OPTIONS]
+
+        return {
+            "turn_number": turn_index + 1,
+            "scenario_id": state["scenario"]["id"],
+            "severity": state["severity"],
+            "affected_systems": state["impacted_systems"],
+            "situation": self._build_situation(state, grounding["answer"]),
+            "active_npcs": self._active_npcs(state["severity"], turn_index),
+            "available_options": available_options,
+            "auto_decision": auto_decision,
+            "citations": grounding["citations"],
+        }
+
+    def should_continue(self, state: dict[str, Any]) -> bool:
+        return state["turn_index"] < state["max_turns"]
+
+    def _build_situation(self, state: dict[str, Any], grounded_fact: str) -> str:
+        return (
+            f"Severity {state['severity']} incident across {', '.join(state['impacted_systems'])}. "
+            f"{grounded_fact}"
+        )
+
+    def _active_npcs(self, severity: int, turn_index: int) -> list[str]:
+        personas = ["VP Operations", "Product Manager", "Database Lead", "Support Lead"]
+        if severity >= 5:
+            return personas
+        if turn_index < 2:
+            return personas[:3]
+        return personas[1:]

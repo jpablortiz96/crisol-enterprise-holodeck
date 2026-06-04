@@ -2,11 +2,13 @@ from fastapi import FastAPI, Query
 
 from app.grounding.foundry_iq import grounded_answer
 from app.ontology.graph import affected_systems, load_ontology, revenue_at_risk, summarize_graph
+from app.orchestration.turn_loop import run_simulation
 from app.schemas import (
     GroundingTestResponse,
     HealthResponse,
     OntologySummary,
     RevenueAtRiskResponse,
+    SimulationRunResponse,
 )
 
 
@@ -50,3 +52,8 @@ def grounding_test(q: str = Query(..., min_length=1)) -> dict:
         "citations": result["citations"],
         "mode": result["mode"],
     }
+
+
+@app.get("/scenario/run", response_model=SimulationRunResponse)
+def scenario_run(role_id: str = Query(default="ROLE-SRE")) -> dict:
+    return run_simulation(role_id=role_id, auto_mode=True)
