@@ -11,7 +11,7 @@ CRISOL turns enterprise learning into realistic, measurable practice. It connect
 - How ready is a learner for a target role?
 - Which skills and certifications are missing?
 
-The Phase 1 scaffold is intentionally local and synthetic. It creates the backend foundation before any live integrations or frontend work.
+The Phase 1 scaffold is intentionally local and synthetic. Phase 2 adds a local citation-first grounding layer over approved synthetic documents, plus a Foundry IQ adapter skeleton for later live configuration.
 
 ## Why It Is Different
 
@@ -19,27 +19,32 @@ Most learning systems track course completion. CRISOL models business consequenc
 
 ## Architecture Overview
 
-Phase 1 includes:
+The current backend includes:
 
 - A FastAPI backend service.
 - A NetworkX ontology graph loader.
 - Synthetic learners, roles, skills, certifications, systems, contracts, scenarios, and work rhythm signals.
-- Starter knowledge documents for later grounded retrieval.
+- Synthetic knowledge documents used as the approved local knowledge base.
 - A simple revenue-at-risk calculation based on affected systems and dependent contracts.
+- A local citation fallback for grounded answers.
+- A Foundry IQ adapter boundary that falls back locally until Azure resources are configured.
 
 The backend exposes:
 
 - `GET /health`
 - `GET /ontology/summary`
 - `GET /ontology/revenue-at-risk?systems=SVC-checkout`
+- `GET /grounding/test?q=checkout%20outage%20database%20recovery`
 
 ## Microsoft IQ Integration Plan
 
 CRISOL uses an honest phased integration model:
 
-- Foundry IQ: Phase 2 will connect grounded knowledge with citations. Phase 1 only prepares synthetic knowledge files.
+- Foundry IQ: Phase 2 adds the adapter skeleton and local citation fallback. Live indexing requires Azure project and search configuration.
 - Fabric IQ Ontology: Phase 1 uses a local NetworkX graph and a small adapter boundary so the ontology can later map to Fabric-backed entities.
 - Work IQ: Phase 1 uses synthetic work rhythm signals through local JSON data. Live signals are not implemented yet.
+
+Every grounded answer must include citations. If the approved synthetic knowledge base does not contain enough information, the backend returns a safe no-answer response instead of fabricating support.
 
 ## Synthetic Data Disclaimer
 
@@ -49,6 +54,8 @@ All Phase 1 data is synthetic demonstration data. Learner IDs, contract IDs, sys
 
 ```powershell
 cd backend
+python -m app.grounding.build_knowledge_base
+python -m app.grounding.test_grounding
 python -m app.ontology.load
 uvicorn app.main:app --reload
 ```
@@ -59,6 +66,7 @@ After starting the server, open:
 http://127.0.0.1:8000/health
 http://127.0.0.1:8000/ontology/summary
 http://127.0.0.1:8000/ontology/revenue-at-risk?systems=SVC-checkout
+http://127.0.0.1:8000/grounding/test?q=checkout%20outage%20database%20recovery
 ```
 
 ## Phase Status
@@ -70,5 +78,7 @@ http://127.0.0.1:8000/ontology/revenue-at-risk?systems=SVC-checkout
 - [x] Ontology graph loader.
 - [x] Revenue-at-risk endpoint.
 - [x] Health endpoint.
-- [ ] Phase 2 Foundry IQ integration.
+- [x] Phase 2 local citation fallback.
+- [x] Phase 2 Foundry IQ adapter skeleton.
+- [ ] Live Foundry IQ indexing and retrieval.
 - [ ] Next.js frontend.

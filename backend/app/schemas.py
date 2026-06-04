@@ -19,6 +19,21 @@ class RevenueAtRiskResponse(BaseModel):
     revenue_at_risk: float
 
 
+class Citation(BaseModel):
+    doc_id: str
+    title: str
+    file_name: str
+    chunk_id: str
+    quote: str
+
+
+class GroundingTestResponse(BaseModel):
+    query: str
+    answer: str
+    citations: list[Citation]
+    mode: str
+
+
 class ScenarioOption(BaseModel):
     id: str
     label: str

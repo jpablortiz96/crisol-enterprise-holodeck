@@ -1,7 +1,13 @@
 from fastapi import FastAPI, Query
 
+from app.grounding.foundry_iq import grounded_answer
 from app.ontology.graph import affected_systems, load_ontology, revenue_at_risk, summarize_graph
-from app.schemas import HealthResponse, OntologySummary, RevenueAtRiskResponse
+from app.schemas import (
+    GroundingTestResponse,
+    HealthResponse,
+    OntologySummary,
+    RevenueAtRiskResponse,
+)
 
 
 app = FastAPI(title="CRISOL Backend", version="0.1.0")
@@ -32,4 +38,15 @@ def ontology_revenue_at_risk(
         "initial_systems": initial_systems,
         "affected_systems": impacted,
         "revenue_at_risk": revenue_at_risk(_GRAPH, impacted),
+    }
+
+
+@app.get("/grounding/test", response_model=GroundingTestResponse)
+def grounding_test(q: str = Query(..., min_length=1)) -> dict:
+    result = grounded_answer(q)
+    return {
+        "query": q,
+        "answer": result["answer"],
+        "citations": result["citations"],
+        "mode": result["mode"],
     }

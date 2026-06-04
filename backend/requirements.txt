@@ -3,3 +3,7 @@ uvicorn[standard]
 networkx
 pydantic
 python-dotenv
+azure-identity
+azure-search-documents
+agent-framework
+agent-framework-azure

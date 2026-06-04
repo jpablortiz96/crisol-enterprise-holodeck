@@ -4,9 +4,20 @@ CRISOL uses a phased integration plan for Foundry IQ, Fabric IQ Ontology, and Wo
 
 ## Foundry IQ
 
-Phase 1 does not call Foundry IQ. The local `backend/app/data/knowledge` folder contains synthetic demonstration documents that can later become a grounded knowledge base.
+Phase 2 adds the first grounding interface. The local `backend/app/data/knowledge` folder is the approved synthetic knowledge base for development and tests.
 
-Phase 2 should add grounded retrieval with citations, source filtering, and document-level traceability.
+The current implementation provides a deterministic local citation fallback. It loads markdown files, chunks them by heading or paragraph, searches by query term matches, and returns answers with citations.
+
+Live Foundry IQ indexing and retrieval require Azure project and search configuration:
+
+- `AZURE_AI_PROJECT_ENDPOINT`
+- `AZURE_AI_MODEL_DEPLOYMENT`
+- `AZURE_SEARCH_ENDPOINT`
+- `CRISOL_KNOWLEDGE_BASE`
+
+Until those values and the live indexing flow are ready, the Foundry IQ adapter returns local cited results in `local-fallback` mode when configured, or `local` mode when not configured.
+
+Every grounded answer must carry citations. If there are no citations, CRISOL returns a safe no-answer response.
 
 ## Fabric IQ Ontology
 
@@ -23,3 +34,5 @@ Live Work IQ data is not implemented in Phase 1.
 ## Boundaries
 
 CRISOL must not ingest real employee names, emails, private schedules, production logs, secrets, or customer data during the synthetic phases.
+
+The build script validates the local synthetic documents only. It does not upload documents to Azure.

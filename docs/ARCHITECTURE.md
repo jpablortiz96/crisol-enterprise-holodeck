@@ -29,9 +29,14 @@ CRISOL models role readiness through a five-agent architecture connected to an o
 1. Synthetic JSON data is loaded from `backend/app/data`.
 2. `app.ontology.graph.load_ontology` builds a directed NetworkX graph.
 3. The graph links learners, roles, skills, certifications, systems, contracts, scenarios, and work signals.
-4. FastAPI endpoints expose health, graph summary, and revenue-at-risk views.
-5. Future phases will add grounded knowledge retrieval, live ontology sources, and a frontend.
+4. Synthetic markdown knowledge files are loaded from `backend/app/data/knowledge`.
+5. `app.grounding.local_knowledge` returns cited local answers from approved synthetic documents.
+6. `app.grounding.foundry_iq` provides the adapter boundary for future live Foundry IQ retrieval.
+7. FastAPI endpoints expose health, graph summary, revenue-at-risk, and grounding test views.
+8. Future phases will add live indexing, richer scenario scoring, live ontology sources, and a frontend.
 
-## Phase 1 Boundaries
+## Phase Boundaries
 
 Phase 1 does not connect to live Azure services, production telemetry, or real employee data. All data is synthetic and local.
+
+Phase 2 adds local cited retrieval and an adapter skeleton. Live Foundry IQ indexing and retrieval remain configuration-driven future work.
