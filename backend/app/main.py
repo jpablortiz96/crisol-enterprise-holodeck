@@ -1,11 +1,16 @@
 from fastapi import FastAPI, HTTPException, Query
 
 from app.grounding.foundry_iq import grounded_answer
+from app.insights.manager import build_fragility_map
 from app.ontology.graph import affected_systems, load_ontology, revenue_at_risk, summarize_graph
 from app.orchestration.turn_loop import run_simulation
+from app.scoring.competence_report import generate_competence_report
 from app.schemas import (
+    CompetenceReport,
     GroundingTestResponse,
     HealthResponse,
+    ManagerFragilityMap,
+    ManagerReadinessSummary,
     OntologySummary,
     RevenueAtRiskResponse,
     SavedSessionSummary,
@@ -86,3 +91,42 @@ def scenario_session(session_id: str) -> dict:
         return load_session(session_id)
     except FileNotFoundError as error:
         raise HTTPException(status_code=404, detail=str(error)) from error
+
+
+@app.get("/reports/competence/{session_id}", response_model=CompetenceReport)
+def competence_report(session_id: str) -> dict:
+    try:
+        return generate_competence_report(load_session(session_id))
+    except FileNotFoundError as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+
+
+@app.get("/reports/latest", response_model=CompetenceReport)
+def latest_report() -> dict:
+    sessions = list_sessions()
+    if not sessions:
+        raise HTTPException(status_code=404, detail="No saved sessions found. Run a scenario first.")
+    return generate_competence_report(load_session(sessions[0]["session_id"]))
+
+
+@app.get("/manager/fragility-map", response_model=ManagerFragilityMap)
+def manager_fragility_map() -> dict:
+    return build_fragility_map()
+
+
+@app.get("/manager/readiness-summary", response_model=ManagerReadinessSummary)
+def manager_readiness_summary() -> dict:
+    fragility_map = build_fragility_map()
+    team = fragility_map["team_readiness"]
+    role_risk = fragility_map.get("role_risk", [])
+    recommended_action = (
+        role_risk[0]["recommended_manager_action"]
+        if role_risk
+        else "Run a scenario first to populate synthetic readiness insights."
+    )
+    return {
+        "average_score": team["average_score"],
+        "highest_risk_dimension": team["highest_risk_dimension"],
+        "recommended_action": recommended_action,
+        "session_count": fragility_map["session_count"],
+    }

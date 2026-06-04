@@ -69,7 +69,10 @@ def _print_session(session: dict[str, Any]) -> None:
         print(f"  - {name}: {dimension['score']} (weight {dimension['weight']})")
     print("Failure modes:")
     for failure in score["failure_modes"]:
-        print(f"  - {failure}")
+        if isinstance(failure, dict):
+            print(f"  - {failure['mode_id']}: {failure['description']}")
+        else:
+            print(f"  - {failure}")
     _print_citations(score["citations"])
 
     coach_plan = session["coach_plan"]
@@ -79,8 +82,14 @@ def _print_session(session: dict[str, Any]) -> None:
     print(f"Top gap: {coach_plan['top_gap']}")
     print("Micro-learning plan:")
     for item in coach_plan["micro_plan"]:
-        print(f"  - {item}")
+        if isinstance(item, dict):
+            print(f"  - Step {item['step']}: {item['title']} ({item['estimated_minutes']} min)")
+            print(f"    {item['activity']}")
+        else:
+            print(f"  - {item}")
     print(f"Practice scenario: {coach_plan['practice_scenario']}")
+    if coach_plan.get("manager_note"):
+        print(f"Manager note: {coach_plan['manager_note']}")
     _print_citations(coach_plan["citations"])
 
 

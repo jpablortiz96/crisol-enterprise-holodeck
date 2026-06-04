@@ -11,7 +11,7 @@ CRISOL turns enterprise learning into realistic, measurable practice. It connect
 - How ready is a learner for a target role?
 - Which skills and certifications are missing?
 
-The Phase 1 scaffold is intentionally local and synthetic. Phase 2 adds a local citation-first grounding layer over approved synthetic documents, plus a Foundry IQ adapter skeleton for later live configuration. Phase 3 adds the first deterministic multi-agent simulation loop for terminal demos. Phase 4 adds replay-ready branching timelines and local session storage.
+The Phase 1 scaffold is intentionally local and synthetic. Phase 2 adds a local citation-first grounding layer over approved synthetic documents, plus a Foundry IQ adapter skeleton for later live configuration. Phase 3 adds the first deterministic multi-agent simulation loop for terminal demos. Phase 4 adds replay-ready branching timelines and local session storage. Phase 5 adds competence reporting and aggregate manager insights.
 
 ## Why It Is Different
 
@@ -31,6 +31,8 @@ The current backend includes:
 - A local multi-agent simulation loop for seeded incident practice.
 - A branching timeline with parented decision nodes, cascade paths, revenue deltas, and contract exposure.
 - Local ignored session storage under `backend/.crisol_sessions/`.
+- A weighted competence report with cited evidence, skill gaps, certification alignment, and next best actions.
+- A no-PII manager fragility map over saved synthetic sessions.
 
 The backend exposes:
 
@@ -43,6 +45,10 @@ The backend exposes:
 - `GET /scenario/sessions`
 - `GET /scenario/{session_id}`
 - `GET /scenario/{session_id}/timeline`
+- `GET /reports/competence/{session_id}`
+- `GET /reports/latest`
+- `GET /manager/fragility-map`
+- `GET /manager/readiness-summary`
 
 ## Microsoft IQ Integration Plan
 
@@ -62,6 +68,7 @@ All Phase 1 data is synthetic demonstration data. Learner IDs, contract IDs, sys
 
 ```powershell
 cd backend
+python -m app.validate_phase5
 python -m app.validate_phase4
 python -m app.run_scenario --role ROLE-SRE
 python -m app.grounding.build_knowledge_base
@@ -80,6 +87,9 @@ http://127.0.0.1:8000/grounding/test?q=checkout%20outage%20database%20recovery
 http://127.0.0.1:8000/scenario/run?role_id=ROLE-SRE
 http://127.0.0.1:8000/scenario/run/timeline?role_id=ROLE-SRE
 http://127.0.0.1:8000/scenario/sessions
+http://127.0.0.1:8000/reports/latest
+http://127.0.0.1:8000/manager/fragility-map
+http://127.0.0.1:8000/manager/readiness-summary
 ```
 
 ## Phase Status
@@ -98,5 +108,8 @@ http://127.0.0.1:8000/scenario/sessions
 - [x] Phase 4 branching timeline.
 - [x] Phase 4 local session replay storage.
 - [x] Phase 4 validation script.
+- [x] Phase 5 scored competence report.
+- [x] Phase 5 manager fragility map.
+- [x] Phase 5 validation script.
 - [ ] Live Foundry IQ indexing and retrieval.
 - [ ] Next.js frontend.

@@ -46,13 +46,23 @@ Bad decisions expand active systems and exposure. Recovery decisions shrink acti
 
 ## Examiner
 
-The Examiner compares learner decisions with expected competencies. It scores triage, technical correctness, communication, escalation judgment, and data-layer recovery.
+The Examiner compares learner decisions with expected competencies. It now uses the reusable scoring rubric to produce a cited competence report.
 
 Current implementation: `app.agents.examiner.score_session`
 
+Phase 5 report fields:
+
+- overall score and readiness band
+- weighted dimensions
+- cited evidence trail
+- failure modes
+- skill gaps
+- synthetic certification alignment
+- next best actions
+
 ## Coach
 
-The Coach turns the Examiner output into a learning plan. It identifies the highest-leverage skill gap and returns a concise practice plan.
+The Coach turns the Examiner output into a structured learning plan. It picks the highest-leverage gap from the competence report and returns concise practice steps, success criteria, a manager note, and citations.
 
 Current implementation: `app.agents.coach.generate_coach_plan`
 
@@ -63,3 +73,5 @@ Current implementation: `app.agents.coach.generate_coach_plan`
 The current implementation does not call live hosted agents. The contracts are shaped so future phases can swap local functions for Microsoft Agent Framework or Foundry-hosted agents.
 
 Phase 4 also builds a branching timeline during orchestration and saves the completed session for local replay.
+
+Phase 5 adds manager-level aggregate insights over saved sessions without exposing individual learner identity.

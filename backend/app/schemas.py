@@ -93,19 +93,97 @@ class TurnRecord(BaseModel):
 class ScoreDimension(BaseModel):
     score: float
     weight: float
+    label: str | None = None
+    description: str | None = None
+    linked_skills: list[str] | None = None
+    linked_certifications: list[str] | None = None
+
+
+class EvidenceItem(BaseModel):
+    evidence_id: str
+    turn_number: int
+    observation: str
+    impact: str
+    linked_dimension: str
+    citations: list[Citation]
+
+
+class FailureMode(BaseModel):
+    mode_id: str
+    description: str
+    linked_dimensions: list[str]
+
+
+class SkillGap(BaseModel):
+    skill_id: str
+    dimension_id: str
+    severity: str
+    recommended_practice_scenario: str
+    rationale: str
+    citations: list[Citation]
+
+
+class CertificationAlignment(BaseModel):
+    certification_id: str
+    alignment_score: float
+    risk: str
+    note: str
+    linked_dimensions: list[str] | None = None
+    citations: list[Citation] | None = None
+
+
+class NextBestAction(BaseModel):
+    action_id: str
+    title: str
+    rationale: str
+    estimated_minutes: int
+    citations: list[Citation]
 
 
 class ScoreReport(BaseModel):
+    report_id: str | None = None
     score: float
+    overall_score: float | None = None
+    readiness_band: str | None = None
+    executive_summary: str | None = None
     dimensions: dict[str, ScoreDimension]
-    failure_modes: list[str]
+    evidence_trail: list[EvidenceItem] | None = None
+    failure_modes: list[FailureMode]
+    skill_gaps: list[SkillGap] | None = None
+    certification_alignment: list[CertificationAlignment] | None = None
+    next_best_actions: list[NextBestAction] | None = None
     citations: list[Citation]
+
+
+class CoachStep(BaseModel):
+    step: int
+    title: str
+    activity: str
+    estimated_minutes: int
+    success_criteria: str
 
 
 class CoachPlan(BaseModel):
     top_gap: str
-    micro_plan: list[str]
+    top_gap_dimension: str | None = None
+    micro_plan: list[CoachStep]
     practice_scenario: str
+    manager_note: str | None = None
+    citations: list[Citation]
+
+
+class CompetenceReport(BaseModel):
+    report_id: str
+    session_id: str
+    overall_score: float
+    readiness_band: str
+    executive_summary: str
+    dimensions: dict[str, ScoreDimension]
+    evidence_trail: list[EvidenceItem]
+    failure_modes: list[FailureMode]
+    skill_gaps: list[SkillGap]
+    certification_alignment: list[CertificationAlignment]
+    next_best_actions: list[NextBestAction]
     citations: list[Citation]
 
 
@@ -157,6 +235,54 @@ class SavedSessionSummary(BaseModel):
     final_score: float | None
     saved_at: str | None
     file_name: str
+
+
+class RoleRisk(BaseModel):
+    role_id: str
+    sessions: int
+    average_score: float
+    risk_band: str
+    weak_dimensions: list[str]
+    recommended_manager_action: str
+
+
+class SkillFragility(BaseModel):
+    skill_id: str
+    linked_dimension: str
+    risk_score: float
+    evidence_count: int
+    recommended_intervention: str
+
+
+class CertificationReadiness(BaseModel):
+    certification_id: str
+    alignment_score: float
+    risk: str
+    note: str
+
+
+class TeamReadiness(BaseModel):
+    average_score: float
+    band_distribution: dict[str, int]
+    highest_risk_dimension: str | None
+    highest_risk_skill: str | None
+
+
+class ManagerFragilityMap(BaseModel):
+    generated_at: str
+    session_count: int
+    team_readiness: TeamReadiness
+    role_risk: list[RoleRisk]
+    skill_fragility: list[SkillFragility]
+    certification_readiness: list[CertificationReadiness]
+    privacy_note: str
+
+
+class ManagerReadinessSummary(BaseModel):
+    average_score: float
+    highest_risk_dimension: str | None
+    recommended_action: str
+    session_count: int
 
 
 class SimulationRunResponse(BaseModel):

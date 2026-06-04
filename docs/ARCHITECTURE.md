@@ -35,8 +35,10 @@ CRISOL models role readiness through a five-agent architecture connected to an o
 7. `app.orchestration.turn_loop` runs the local five-agent simulation loop.
 8. `app.branching.timeline` builds parented branch nodes and edges for replay.
 9. `app.storage.session_store` saves completed sessions under ignored local JSON storage.
-10. FastAPI endpoints expose health, graph summary, revenue-at-risk, grounding test, scenario run, saved sessions, and timeline views.
-11. Future phases will add live indexing, hosted agents, live ontology sources, and a frontend.
+10. `app.scoring.competence_report` converts sessions into cited readiness reports.
+11. `app.insights.manager` aggregates saved sessions into a no-PII fragility map.
+12. FastAPI endpoints expose health, graph summary, revenue-at-risk, grounding test, scenario run, saved sessions, timeline views, reports, and manager summaries.
+13. Future phases will add live indexing, hosted agents, live ontology sources, and a frontend.
 
 ## Local Orchestration Loop
 
@@ -61,6 +63,19 @@ Phase 4 makes the consequence chain replay-ready:
 
 The JSON shape is ready for a future ReactFlow frontend, but no frontend is created in this phase.
 
+## Manager Insights
+
+Phase 5 adds an aggregate readiness view over saved synthetic sessions:
+
+- average readiness score
+- readiness band distribution
+- highest-risk dimension and skill
+- role-level risk
+- skill fragility
+- synthetic certification readiness alignment
+
+The manager output does not include employee names, emails, learner identity, or PII.
+
 ## Phase Boundaries
 
 Phase 1 does not connect to live Azure services, production telemetry, or real employee data. All data is synthetic and local.
@@ -70,3 +85,5 @@ Phase 2 adds local cited retrieval and an adapter skeleton. Live Foundry IQ inde
 Phase 3 adds local deterministic agent orchestration. It does not require live Azure credentials or hosted agent calls.
 
 Phase 4 adds local replay storage under `backend/.crisol_sessions/`. The folder is ignored and should not be committed.
+
+Phase 5 adds product-grade reporting over synthetic saved sessions. Certification alignment is a synthetic readiness signal only, not official certification status.

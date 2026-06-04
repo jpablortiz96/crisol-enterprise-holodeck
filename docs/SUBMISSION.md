@@ -19,9 +19,15 @@ The current submission includes:
 
 CRISOL connects learning readiness to operational and commercial consequences. It models how missing skills, missing certifications, system dependencies, and contract exposure can combine during an incident.
 
+The current backend turns each run into scored readiness: weighted competence dimensions, cited evidence trail, failure modes, skill gaps, synthetic certification alignment, and next best actions.
+
+Manager insights aggregate saved synthetic runs into a fragility map without exposing PII or individual learner identity.
+
 ## Data Boundary
 
 All data is synthetic demonstration data. No real employee, customer, telemetry, or secret data is included.
+
+Reports use cited synthetic evidence from approved local documents and simulation outcomes. Certification alignment is synthetic readiness guidance only.
 
 ## Future Work
 
@@ -29,4 +35,5 @@ All data is synthetic demonstration data. No real employee, customer, telemetry,
 - Fabric-backed ontology mapping.
 - Live or approved synthetic Work IQ adapters.
 - Scenario scoring and coaching workflows.
+- Richer manager dashboards over aggregate readiness risk.
 - Frontend experience for demos.

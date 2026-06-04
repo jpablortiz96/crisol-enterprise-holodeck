@@ -65,3 +65,13 @@
 5. Close on assessment.
 
    The final section prints competence score, dimension scores, failure modes, and a coach debrief.
+
+6. Show the product report.
+
+   Open `/reports/latest` and call out the cited evidence trail, skill gaps, certification alignment, and next best actions.
+
+7. Show the manager view.
+
+   Open `/manager/fragility-map`.
+
+   After the run, show the cited competence report and manager fragility map.
