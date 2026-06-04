@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class HealthResponse(BaseModel):
@@ -58,12 +58,25 @@ class NPCReaction(BaseModel):
     pressure_level: int
 
 
+class ContractExposure(BaseModel):
+    contract_id: str
+    criticality: str
+    systems: list[str]
+    revenue_per_hour: float
+    exposure: float
+
+
 class ConsequenceDelta(BaseModel):
     branch_id: str
     severity_delta: int
     new_severity: int
     affected_systems: list[str]
+    newly_affected_systems: list[str]
+    recovered_systems: list[str]
+    cascade_paths: list[list[str]]
+    contract_exposure: list[ContractExposure]
     revenue_at_risk: float
+    revenue_delta: float
     world_delta: str
     citations: list[Citation]
 
@@ -96,9 +109,61 @@ class CoachPlan(BaseModel):
     citations: list[Citation]
 
 
+class TimelineNode(BaseModel):
+    node_id: str
+    session_id: str
+    parent_node_id: str | None
+    turn_number: int
+    decision_id: str | None
+    decision_label: str | None
+    severity: int
+    affected_systems: list[str]
+    revenue_at_risk: float
+    revenue_delta: float
+    world_delta: str
+    branch_id: str
+    created_at: str
+
+
+class TimelineEdge(BaseModel):
+    from_: str = Field(alias="from")
+    to: str
+    label: str
+
+    model_config = ConfigDict(populate_by_name=True)
+
+
+class TimelineSummary(BaseModel):
+    total_nodes: int
+    max_severity: int
+    max_revenue_at_risk: float
+    final_severity: int
+    final_revenue_at_risk: float
+
+
+class TimelineResponse(BaseModel):
+    session_id: str
+    root_node_id: str
+    nodes: list[TimelineNode]
+    edges: list[TimelineEdge]
+    summary: TimelineSummary
+
+
+class SavedSessionSummary(BaseModel):
+    session_id: str
+    scenario_id: str
+    scenario_title: str
+    turn_count: int
+    final_score: float | None
+    saved_at: str | None
+    file_name: str
+
+
 class SimulationRunResponse(BaseModel):
     session_id: str
     scenario: dict
     turns: list[TurnRecord]
+    timeline: TimelineResponse
     final_score: ScoreReport
     coach_plan: CoachPlan
+    saved_at: str | None = None

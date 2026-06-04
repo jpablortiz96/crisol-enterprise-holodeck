@@ -11,7 +11,7 @@ CRISOL turns enterprise learning into realistic, measurable practice. It connect
 - How ready is a learner for a target role?
 - Which skills and certifications are missing?
 
-The Phase 1 scaffold is intentionally local and synthetic. Phase 2 adds a local citation-first grounding layer over approved synthetic documents, plus a Foundry IQ adapter skeleton for later live configuration. Phase 3 adds the first deterministic multi-agent simulation loop for terminal demos.
+The Phase 1 scaffold is intentionally local and synthetic. Phase 2 adds a local citation-first grounding layer over approved synthetic documents, plus a Foundry IQ adapter skeleton for later live configuration. Phase 3 adds the first deterministic multi-agent simulation loop for terminal demos. Phase 4 adds replay-ready branching timelines and local session storage.
 
 ## Why It Is Different
 
@@ -29,6 +29,8 @@ The current backend includes:
 - A local citation fallback for grounded answers.
 - A Foundry IQ adapter boundary that falls back locally until Azure resources are configured.
 - A local multi-agent simulation loop for seeded incident practice.
+- A branching timeline with parented decision nodes, cascade paths, revenue deltas, and contract exposure.
+- Local ignored session storage under `backend/.crisol_sessions/`.
 
 The backend exposes:
 
@@ -37,6 +39,10 @@ The backend exposes:
 - `GET /ontology/revenue-at-risk?systems=SVC-checkout`
 - `GET /grounding/test?q=checkout%20outage%20database%20recovery`
 - `GET /scenario/run?role_id=ROLE-SRE`
+- `GET /scenario/run/timeline?role_id=ROLE-SRE`
+- `GET /scenario/sessions`
+- `GET /scenario/{session_id}`
+- `GET /scenario/{session_id}/timeline`
 
 ## Microsoft IQ Integration Plan
 
@@ -56,6 +62,7 @@ All Phase 1 data is synthetic demonstration data. Learner IDs, contract IDs, sys
 
 ```powershell
 cd backend
+python -m app.validate_phase4
 python -m app.run_scenario --role ROLE-SRE
 python -m app.grounding.build_knowledge_base
 python -m app.grounding.test_grounding
@@ -71,6 +78,8 @@ http://127.0.0.1:8000/ontology/summary
 http://127.0.0.1:8000/ontology/revenue-at-risk?systems=SVC-checkout
 http://127.0.0.1:8000/grounding/test?q=checkout%20outage%20database%20recovery
 http://127.0.0.1:8000/scenario/run?role_id=ROLE-SRE
+http://127.0.0.1:8000/scenario/run/timeline?role_id=ROLE-SRE
+http://127.0.0.1:8000/scenario/sessions
 ```
 
 ## Phase Status
@@ -86,5 +95,8 @@ http://127.0.0.1:8000/scenario/run?role_id=ROLE-SRE
 - [x] Phase 2 Foundry IQ adapter skeleton.
 - [x] Phase 3 deterministic terminal simulation loop.
 - [x] Phase 3 scenario run API endpoint.
+- [x] Phase 4 branching timeline.
+- [x] Phase 4 local session replay storage.
+- [x] Phase 4 validation script.
 - [ ] Live Foundry IQ indexing and retrieval.
 - [ ] Next.js frontend.

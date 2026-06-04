@@ -23,9 +23,26 @@ Current implementation: `app.agents.npcs.generate_npc_reactions`
 
 ## Consequence Engine
 
-The Consequence Engine reads the ontology graph to identify affected systems, branch nodes, severity movement, contract exposure, and revenue-at-risk.
+The Consequence Engine reads the ontology graph to identify affected systems, branch nodes, severity movement, contract exposure, revenue-at-risk, and cascade paths.
 
 Current implementation: `app.agents.consequence.evaluate_decision`
+
+Phase 4 consequence fields:
+
+- `branch_id`
+- `severity_delta`
+- `new_severity`
+- `affected_systems`
+- `newly_affected_systems`
+- `recovered_systems`
+- `cascade_paths`
+- `contract_exposure`
+- `revenue_at_risk`
+- `revenue_delta`
+- `world_delta`
+- `citations`
+
+Bad decisions expand active systems and exposure. Recovery decisions shrink active systems and reduce final severity.
 
 ## Examiner
 
@@ -44,3 +61,5 @@ Current implementation: `app.agents.coach.generate_coach_plan`
 `app.orchestration.turn_loop.run_simulation` runs the Director, Consequence Engine, NPC Ensemble, Examiner, and Coach in sequence. The loop is deterministic, uses synthetic data only, and includes citations from the local grounding layer where possible.
 
 The current implementation does not call live hosted agents. The contracts are shaped so future phases can swap local functions for Microsoft Agent Framework or Foundry-hosted agents.
+
+Phase 4 also builds a branching timeline during orchestration and saves the completed session for local replay.

@@ -56,6 +56,8 @@
 
    The first turn intentionally restarts checkout during database uncertainty, increasing severity and revenue-at-risk.
 
+   Show the timeline branch graph and revenue-at-risk deltas after the first bad decision.
+
 4. Highlight the recovery arc.
 
    Later turns freeze writes, escalate incident command, correlate telemetry, and restore traffic gradually.

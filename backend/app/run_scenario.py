@@ -42,9 +42,21 @@ def _print_session(session: dict[str, Any]) -> None:
             "Consequence delta: "
             f"{consequence['world_delta']} "
             f"Severity {consequence['severity_delta']:+d} -> {consequence['new_severity']}; "
-            f"revenue at risk {consequence['revenue_at_risk']}"
+            f"revenue at risk {consequence['revenue_at_risk']} "
+            f"({consequence['revenue_delta']:+.1f})"
         )
         print(f"Affected systems: {', '.join(consequence['affected_systems'])}")
+        print(f"Newly affected: {', '.join(consequence['newly_affected_systems']) or 'none'}")
+        print(f"Recovered: {', '.join(consequence['recovered_systems']) or 'none'}")
+        print("Cascade paths:")
+        for path in consequence["cascade_paths"][:3]:
+            print(f"  - {' -> '.join(path)}")
+        print("Contract exposure:")
+        for exposure in consequence["contract_exposure"][:4]:
+            print(
+                f"  - {exposure['contract_id']} ({exposure['criticality']}): "
+                f"{exposure['exposure']} across {', '.join(exposure['systems'])}"
+            )
         _print_citations(turn["citations"])
 
     score = session["final_score"]

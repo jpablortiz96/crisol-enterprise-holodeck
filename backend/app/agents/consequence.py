@@ -60,17 +60,28 @@ def evaluate_decision(graph: nx.DiGraph, state: dict[str, Any], decision: dict[s
     new_severity = max(1, min(5, state["severity"] + severity_delta))
     current_systems = list(state["impacted_systems"])
     affected = _affected_for_action(graph, action_type, current_systems)
-    revenue = revenue_at_risk(graph, affected)
+    previous_revenue = float(state.get("revenue_at_risk", revenue_at_risk(graph, current_systems)))
+    exposure = _contract_exposure(graph, affected)
+    revenue = round(sum(item["exposure"] for item in exposure), 2)
+    revenue_delta = round(revenue - previous_revenue, 2)
+    newly_affected = sorted(set(affected) - set(current_systems))
+    recovered = sorted(set(current_systems) - set(affected))
+    cascade_paths = _cascade_paths(graph, state, affected)
     grounding = answer_with_citations(effect["query"], top_k=3)
     branch_id = f"BR-{turn_number:02d}-{action_type.upper().replace('_', '-')}"
+    parent_branch_id = state.get("current_branch_id", "BR-ROOT")
 
     graph.add_node(
         branch_id,
         node_type="Branch",
+        parent_branch_id=parent_branch_id,
         decision_id=decision["id"],
         label=decision["label"],
         new_severity=new_severity,
+        revenue_at_risk=revenue,
     )
+    if parent_branch_id in graph:
+        graph.add_edge(parent_branch_id, branch_id, relationship="branches_to")
     for system_id in affected:
         graph.add_edge(branch_id, system_id, relationship="affects")
 
@@ -79,7 +90,12 @@ def evaluate_decision(graph: nx.DiGraph, state: dict[str, Any], decision: dict[s
         "severity_delta": severity_delta,
         "new_severity": new_severity,
         "affected_systems": affected,
+        "newly_affected_systems": newly_affected,
+        "recovered_systems": recovered,
+        "cascade_paths": cascade_paths,
+        "contract_exposure": exposure,
         "revenue_at_risk": revenue,
+        "revenue_delta": revenue_delta,
         "world_delta": effect["world_delta"],
         "citations": grounding["citations"],
     }
@@ -104,3 +120,62 @@ def _affected_for_action(graph: nx.DiGraph, action_type: str, current_systems: l
         return ["SVC-checkout", "SVC-orders"]
 
     return sorted(set(current_systems))
+
+
+def _contract_exposure(graph: nx.DiGraph, affected_system_ids: list[str]) -> list[dict[str, Any]]:
+    affected = set(affected_system_ids)
+    exposure = []
+
+    for contract_id, attributes in graph.nodes(data=True):
+        if attributes.get("node_type") != "Contract":
+            continue
+
+        contract_systems = {
+            target
+            for _, target, edge_attributes in graph.out_edges(contract_id, data=True)
+            if edge_attributes.get("relationship") == "depends_on"
+        }
+        impacted_systems = sorted(contract_systems & affected)
+        if impacted_systems:
+            revenue = float(attributes.get("revenue_per_hour", 0.0))
+            exposure.append(
+                {
+                    "contract_id": contract_id,
+                    "criticality": attributes.get("criticality", "unknown"),
+                    "systems": impacted_systems,
+                    "revenue_per_hour": revenue,
+                    "exposure": revenue,
+                }
+            )
+
+    return sorted(exposure, key=lambda item: item["contract_id"])
+
+
+def _cascade_paths(graph: nx.DiGraph, state: dict[str, Any], affected_system_ids: list[str]) -> list[list[str]]:
+    roots = state.get("cascade_roots") or ["SVC-checkout"]
+    affected = set(affected_system_ids)
+    paths: list[list[str]] = []
+
+    for root in roots:
+        if root not in graph:
+            continue
+        for target in sorted(affected):
+            if target == root or target not in graph:
+                continue
+            if graph.nodes.get(target, {}).get("node_type") != "System":
+                continue
+            try:
+                path = nx.shortest_path(graph, root, target)
+            except (nx.NetworkXNoPath, nx.NodeNotFound):
+                continue
+            if len(path) > 1 and all(graph.nodes.get(node, {}).get("node_type") == "System" for node in path):
+                paths.append(path)
+
+    deduped = []
+    seen = set()
+    for path in sorted(paths, key=lambda item: (len(item), item)):
+        key = tuple(path)
+        if key not in seen:
+            seen.add(key)
+            deduped.append(path)
+    return deduped[:8]
