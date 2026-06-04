@@ -11,7 +11,7 @@ CRISOL turns enterprise learning into realistic, measurable practice. It connect
 - How ready is a learner for a target role?
 - Which skills and certifications are missing?
 
-The Phase 1 scaffold is intentionally local and synthetic. Phase 2 adds a local citation-first grounding layer over approved synthetic documents, plus a Foundry IQ adapter skeleton for later live configuration. Phase 3 adds the first deterministic multi-agent simulation loop for terminal demos. Phase 4 adds replay-ready branching timelines and local session storage. Phase 5 adds competence reporting and aggregate manager insights.
+The Phase 1 scaffold is intentionally local and synthetic. Phase 2 adds a local citation-first grounding layer over approved synthetic documents, plus a Foundry IQ adapter skeleton for later live configuration. Phase 3 adds the first deterministic multi-agent simulation loop for terminal demos. Phase 4 adds replay-ready branching timelines and local session storage. Phase 5 adds competence reporting and aggregate manager insights. Phase 6 adds the first browser-based War-Room frontend.
 
 ## Why It Is Different
 
@@ -33,6 +33,7 @@ The current backend includes:
 - Local ignored session storage under `backend/.crisol_sessions/`.
 - A weighted competence report with cited evidence, skill gaps, certification alignment, and next best actions.
 - A no-PII manager fragility map over saved synthetic sessions.
+- A Next.js War-Room dashboard for running simulations, viewing the timeline, reading reports, and showing manager aggregate risk.
 
 The backend exposes:
 
@@ -66,6 +67,8 @@ All Phase 1 data is synthetic demonstration data. Learner IDs, contract IDs, sys
 
 ## Local Run Commands
 
+Backend checks:
+
 ```powershell
 cd backend
 python -m app.validate_phase5
@@ -75,6 +78,29 @@ python -m app.grounding.build_knowledge_base
 python -m app.grounding.test_grounding
 python -m app.ontology.load
 uvicorn app.main:app --reload
+```
+
+Browser demo:
+
+Terminal 1:
+
+```powershell
+cd backend
+python -m uvicorn app.main:app --reload
+```
+
+Terminal 2:
+
+```powershell
+cd frontend
+npm install
+npm run dev
+```
+
+Open:
+
+```text
+http://localhost:3000
 ```
 
 After starting the server, open:
@@ -111,5 +137,5 @@ http://127.0.0.1:8000/manager/readiness-summary
 - [x] Phase 5 scored competence report.
 - [x] Phase 5 manager fragility map.
 - [x] Phase 5 validation script.
+- [x] Phase 6 War-Room frontend.
 - [ ] Live Foundry IQ indexing and retrieval.
-- [ ] Next.js frontend.

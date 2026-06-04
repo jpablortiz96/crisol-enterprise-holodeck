@@ -75,3 +75,27 @@
    Open `/manager/fragility-map`.
 
    After the run, show the cited competence report and manager fragility map.
+
+## Browser War-Room Demo
+
+1. Open War-Room.
+
+   ```text
+   http://localhost:3000
+   ```
+
+2. Run SRE Simulation.
+
+   Click `Run SRE Simulation`.
+
+3. Point to the first bad decision cascade.
+
+   Show the restart decision, severity increase, newly affected systems, and revenue-at-risk delta.
+
+4. Show branching timeline.
+
+   Use the center graph to explain root node, decision nodes, and branch labels.
+
+5. Show competence score and manager fragility map.
+
+   Point to `Competence Score`, the cited competence report, and `Manager Fragility Map`.

@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException, Query
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.grounding.foundry_iq import grounded_answer
 from app.insights.manager import build_fragility_map
@@ -21,6 +22,13 @@ from app.storage.session_store import list_sessions, load_session
 
 
 app = FastAPI(title="CRISOL Backend", version="0.1.0")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 _GRAPH = load_ontology()
 
 
