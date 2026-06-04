@@ -1,0 +1,66 @@
+[
+  {
+    "id": "CON-2031",
+    "name": "Synthetic Retail Checkout Uptime",
+    "depends_on_systems": ["SVC-checkout", "SVC-orders", "SVC-payments"],
+    "required_certifications": ["AZ-400", "AZ-305"],
+    "revenue_per_hour": 12500,
+    "criticality": "critical"
+  },
+  {
+    "id": "CON-2032",
+    "name": "Synthetic Order Fulfillment SLA",
+    "depends_on_systems": ["SVC-orders", "SVC-inventory"],
+    "required_certifications": ["AZ-400"],
+    "revenue_per_hour": 8200,
+    "criticality": "high"
+  },
+  {
+    "id": "CON-2033",
+    "name": "Synthetic Security Monitoring Retainer",
+    "depends_on_systems": ["SVC-observability", "SVC-identity"],
+    "required_certifications": ["SC-200"],
+    "revenue_per_hour": 5400,
+    "criticality": "medium"
+  },
+  {
+    "id": "CON-2034",
+    "name": "Synthetic Database Recovery Coverage",
+    "depends_on_systems": ["SVC-db", "SVC-data-pipeline"],
+    "required_certifications": ["DP-203", "AZ-305"],
+    "revenue_per_hour": 7300,
+    "criticality": "high"
+  },
+  {
+    "id": "CON-2035",
+    "name": "Synthetic Cloud Architecture Advisory",
+    "depends_on_systems": ["SVC-checkout", "SVC-identity"],
+    "required_certifications": ["AZ-305", "AZ-204"],
+    "revenue_per_hour": 6400,
+    "criticality": "medium"
+  },
+  {
+    "id": "CON-2036",
+    "name": "Synthetic Release Pipeline Operations",
+    "depends_on_systems": ["SVC-checkout", "SVC-orders", "SVC-observability"],
+    "required_certifications": ["AZ-400", "AZ-204"],
+    "revenue_per_hour": 9100,
+    "criticality": "high"
+  },
+  {
+    "id": "CON-2037",
+    "name": "Synthetic Analytics Data Freshness",
+    "depends_on_systems": ["SVC-data-pipeline", "SVC-db", "SVC-ledger"],
+    "required_certifications": ["DP-203"],
+    "revenue_per_hour": 4800,
+    "criticality": "medium"
+  },
+  {
+    "id": "CON-2038",
+    "name": "Synthetic Fraud Decisioning Coverage",
+    "depends_on_systems": ["SVC-fraud", "SVC-payments", "SVC-data-pipeline"],
+    "required_certifications": ["SC-200", "AZ-305"],
+    "revenue_per_hour": 11200,
+    "criticality": "critical"
+  }
+]

@@ -1,0 +1,118 @@
+[
+  {
+    "id": "SCN-214-CHECKOUT-SPLIT-BRAIN",
+    "title": "2:14am checkout outage with possible database split-brain cascade",
+    "role_id": "ROLE-SRE",
+    "impacted_systems": ["SVC-checkout", "SVC-orders", "SVC-db"],
+    "initial_stakes": "Checkout error rates exceed 40 percent, order writes are inconsistent, and the synthetic retail contract is in a critical revenue window.",
+    "options": [
+      {
+        "id": "OPT-214-A",
+        "label": "Freeze writes and assemble incident command",
+        "description": "Pause risky write paths, confirm database leader state, and start stakeholder updates.",
+        "competencies": ["SK-incident-triage", "SK-database-recovery", "SK-communication", "SK-escalation-judgment"]
+      },
+      {
+        "id": "OPT-214-B",
+        "label": "Restart checkout workers only",
+        "description": "Recycle checkout workers before checking downstream consistency.",
+        "competencies": ["SK-incident-triage"]
+      },
+      {
+        "id": "OPT-214-C",
+        "label": "Fail over database immediately",
+        "description": "Trigger database failover without validating replication or write ownership.",
+        "competencies": ["SK-database-recovery", "SK-escalation-judgment"]
+      }
+    ],
+    "expected_competencies": ["SK-incident-triage", "SK-observability", "SK-database-recovery", "SK-communication", "SK-escalation-judgment"]
+  },
+  {
+    "id": "SCN-301-TOKEN-ANOMALY",
+    "title": "Identity token anomaly during partner login",
+    "role_id": "ROLE-SEC",
+    "impacted_systems": ["SVC-identity", "SVC-observability"],
+    "initial_stakes": "Synthetic partner login traffic shows token replay indicators and compliance reporting may be required.",
+    "options": [
+      {
+        "id": "OPT-301-A",
+        "label": "Contain suspicious sessions",
+        "description": "Revoke affected tokens, preserve evidence, and open a security incident channel.",
+        "competencies": ["SK-security-operations", "SK-communication", "SK-escalation-judgment"]
+      },
+      {
+        "id": "OPT-301-B",
+        "label": "Wait for more alerts",
+        "description": "Delay containment until more failed logins appear.",
+        "competencies": ["SK-observability"]
+      }
+    ],
+    "expected_competencies": ["SK-security-operations", "SK-observability", "SK-communication"]
+  },
+  {
+    "id": "SCN-402-PIPELINE-LAG",
+    "title": "Analytics data pipeline freshness breach",
+    "role_id": "ROLE-DATA",
+    "impacted_systems": ["SVC-data-pipeline", "SVC-db"],
+    "initial_stakes": "Synthetic executive dashboards are four hours stale before a contract review.",
+    "options": [
+      {
+        "id": "OPT-402-A",
+        "label": "Run recovery plan",
+        "description": "Validate source offsets, replay the failed partition, and communicate dashboard confidence.",
+        "competencies": ["SK-data-engineering", "SK-database-recovery", "SK-communication"]
+      },
+      {
+        "id": "OPT-402-B",
+        "label": "Backfill all tables",
+        "description": "Start a full backfill without isolating the failed partition.",
+        "competencies": ["SK-data-engineering"]
+      }
+    ],
+    "expected_competencies": ["SK-data-engineering", "SK-database-recovery", "SK-observability"]
+  },
+  {
+    "id": "SCN-503-PIPELINE-ROLLBACK",
+    "title": "Deployment pipeline introduces checkout regression",
+    "role_id": "ROLE-DEVOPS",
+    "impacted_systems": ["SVC-checkout", "SVC-orders", "SVC-observability"],
+    "initial_stakes": "A synthetic release increases checkout latency after a partial deployment.",
+    "options": [
+      {
+        "id": "OPT-503-A",
+        "label": "Rollback and preserve diagnostics",
+        "description": "Stop rollout, rollback the release, and capture deployment evidence for review.",
+        "competencies": ["SK-ci-cd", "SK-observability", "SK-incident-triage"]
+      },
+      {
+        "id": "OPT-503-B",
+        "label": "Continue deployment",
+        "description": "Complete the rollout to reduce version skew before checking user impact.",
+        "competencies": ["SK-ci-cd"]
+      }
+    ],
+    "expected_competencies": ["SK-ci-cd", "SK-observability", "SK-communication"]
+  },
+  {
+    "id": "SCN-604-CAPACITY-REVIEW",
+    "title": "Cloud capacity review before synthetic seasonal launch",
+    "role_id": "ROLE-CLOUD",
+    "impacted_systems": ["SVC-checkout", "SVC-payments", "SVC-identity"],
+    "initial_stakes": "Synthetic forecast traffic is 3x baseline and the checkout contract has a critical launch window.",
+    "options": [
+      {
+        "id": "OPT-604-A",
+        "label": "Model dependency capacity",
+        "description": "Validate downstream scaling limits, identity throughput, and rollback guardrails.",
+        "competencies": ["SK-cloud-architecture", "SK-observability", "SK-escalation-judgment"]
+      },
+      {
+        "id": "OPT-604-B",
+        "label": "Scale checkout only",
+        "description": "Increase checkout instances without checking downstream services.",
+        "competencies": ["SK-cloud-architecture"]
+      }
+    ],
+    "expected_competencies": ["SK-cloud-architecture", "SK-observability", "SK-communication"]
+  }
+]

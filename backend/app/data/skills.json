@@ -1,0 +1,62 @@
+[
+  {
+    "id": "SK-incident-triage",
+    "name": "Incident triage",
+    "description": "Classify impact, isolate symptoms, and choose the first stabilizing action.",
+    "prerequisites": []
+  },
+  {
+    "id": "SK-observability",
+    "name": "Observability",
+    "description": "Use metrics, logs, traces, and service maps to explain system state.",
+    "prerequisites": ["SK-incident-triage"]
+  },
+  {
+    "id": "SK-database-recovery",
+    "name": "Database recovery",
+    "description": "Restore database service while protecting consistency and recovery point objectives.",
+    "prerequisites": ["SK-observability", "SK-incident-triage"]
+  },
+  {
+    "id": "SK-api-development",
+    "name": "API development",
+    "description": "Design, build, and operate service APIs with clear contracts and failure behavior.",
+    "prerequisites": []
+  },
+  {
+    "id": "SK-ci-cd",
+    "name": "CI/CD",
+    "description": "Build reliable pipelines with tests, deployment gates, and rollback paths.",
+    "prerequisites": ["SK-api-development"]
+  },
+  {
+    "id": "SK-data-engineering",
+    "name": "Data engineering",
+    "description": "Build and operate data pipelines, quality checks, and analytical datasets.",
+    "prerequisites": ["SK-database-recovery"]
+  },
+  {
+    "id": "SK-security-operations",
+    "name": "Security operations",
+    "description": "Detect, investigate, contain, and communicate security events.",
+    "prerequisites": ["SK-observability"]
+  },
+  {
+    "id": "SK-communication",
+    "name": "Communication",
+    "description": "Communicate status, uncertainty, risk, and decisions to stakeholders.",
+    "prerequisites": []
+  },
+  {
+    "id": "SK-escalation-judgment",
+    "name": "Escalation judgment",
+    "description": "Know when to escalate, who to involve, and how to frame the decision.",
+    "prerequisites": ["SK-communication", "SK-incident-triage"]
+  },
+  {
+    "id": "SK-cloud-architecture",
+    "name": "Cloud architecture",
+    "description": "Design resilient cloud systems across compute, data, networking, and operations.",
+    "prerequisites": ["SK-observability", "SK-api-development"]
+  }
+]

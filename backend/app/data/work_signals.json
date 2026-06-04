@@ -1,0 +1,86 @@
+[
+  {
+    "learner_id": "L-1001",
+    "meeting_hours_per_week": 11,
+    "focus_hours_per_week": 16,
+    "preferred_learning_slot": "Tuesday 09:00",
+    "interruption_risk": "medium"
+  },
+  {
+    "learner_id": "L-1002",
+    "meeting_hours_per_week": 18,
+    "focus_hours_per_week": 9,
+    "preferred_learning_slot": "Thursday 15:00",
+    "interruption_risk": "high"
+  },
+  {
+    "learner_id": "L-1003",
+    "meeting_hours_per_week": 14,
+    "focus_hours_per_week": 13,
+    "preferred_learning_slot": "Wednesday 10:00",
+    "interruption_risk": "medium"
+  },
+  {
+    "learner_id": "L-1004",
+    "meeting_hours_per_week": 8,
+    "focus_hours_per_week": 20,
+    "preferred_learning_slot": "Monday 14:00",
+    "interruption_risk": "low"
+  },
+  {
+    "learner_id": "L-1005",
+    "meeting_hours_per_week": 12,
+    "focus_hours_per_week": 15,
+    "preferred_learning_slot": "Friday 11:00",
+    "interruption_risk": "medium"
+  },
+  {
+    "learner_id": "L-1006",
+    "meeting_hours_per_week": 19,
+    "focus_hours_per_week": 8,
+    "preferred_learning_slot": "Wednesday 21:00",
+    "interruption_risk": "high"
+  },
+  {
+    "learner_id": "L-1007",
+    "meeting_hours_per_week": 7,
+    "focus_hours_per_week": 22,
+    "preferred_learning_slot": "Tuesday 13:00",
+    "interruption_risk": "low"
+  },
+  {
+    "learner_id": "L-1008",
+    "meeting_hours_per_week": 13,
+    "focus_hours_per_week": 12,
+    "preferred_learning_slot": "Thursday 09:00",
+    "interruption_risk": "medium"
+  },
+  {
+    "learner_id": "L-1009",
+    "meeting_hours_per_week": 10,
+    "focus_hours_per_week": 17,
+    "preferred_learning_slot": "Monday 10:00",
+    "interruption_risk": "medium"
+  },
+  {
+    "learner_id": "L-1010",
+    "meeting_hours_per_week": 6,
+    "focus_hours_per_week": 24,
+    "preferred_learning_slot": "Wednesday 14:00",
+    "interruption_risk": "low"
+  },
+  {
+    "learner_id": "L-1011",
+    "meeting_hours_per_week": 21,
+    "focus_hours_per_week": 7,
+    "preferred_learning_slot": "Friday 20:00",
+    "interruption_risk": "high"
+  },
+  {
+    "learner_id": "L-1012",
+    "meeting_hours_per_week": 12,
+    "focus_hours_per_week": 15,
+    "preferred_learning_slot": "Tuesday 15:00",
+    "interruption_risk": "medium"
+  }
+]

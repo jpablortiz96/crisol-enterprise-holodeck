@@ -1,0 +1,32 @@
+[
+  {
+    "id": "AZ-204",
+    "name": "Azure Developer Associate",
+    "covers_skills": ["SK-api-development", "SK-observability", "SK-communication"],
+    "recommended_study_hours": 55
+  },
+  {
+    "id": "AZ-400",
+    "name": "Azure DevOps Engineer Expert",
+    "covers_skills": ["SK-ci-cd", "SK-incident-triage", "SK-communication"],
+    "recommended_study_hours": 70
+  },
+  {
+    "id": "DP-203",
+    "name": "Azure Data Engineer Associate",
+    "covers_skills": ["SK-data-engineering", "SK-database-recovery", "SK-observability"],
+    "recommended_study_hours": 65
+  },
+  {
+    "id": "AZ-305",
+    "name": "Azure Solutions Architect Expert",
+    "covers_skills": ["SK-cloud-architecture", "SK-escalation-judgment", "SK-observability"],
+    "recommended_study_hours": 80
+  },
+  {
+    "id": "SC-200",
+    "name": "Security Operations Analyst Associate",
+    "covers_skills": ["SK-security-operations", "SK-incident-triage", "SK-escalation-judgment"],
+    "recommended_study_hours": 60
+  }
+]

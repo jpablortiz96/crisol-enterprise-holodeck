@@ -1,0 +1,72 @@
+[
+  {
+    "id": "SVC-checkout",
+    "name": "Synthetic Checkout Service",
+    "depends_on": ["SVC-orders", "SVC-payments", "SVC-identity"],
+    "risk_weight": 1.0,
+    "owner_role": "ROLE-SRE"
+  },
+  {
+    "id": "SVC-orders",
+    "name": "Synthetic Orders Service",
+    "depends_on": ["SVC-db", "SVC-inventory"],
+    "risk_weight": 0.9,
+    "owner_role": "ROLE-DEVOPS"
+  },
+  {
+    "id": "SVC-db",
+    "name": "Synthetic Transaction Database",
+    "depends_on": [],
+    "risk_weight": 0.95,
+    "owner_role": "ROLE-DATA"
+  },
+  {
+    "id": "SVC-payments",
+    "name": "Synthetic Payments Service",
+    "depends_on": ["SVC-ledger", "SVC-fraud"],
+    "risk_weight": 0.98,
+    "owner_role": "ROLE-SEC"
+  },
+  {
+    "id": "SVC-inventory",
+    "name": "Synthetic Inventory Service",
+    "depends_on": ["SVC-data-pipeline"],
+    "risk_weight": 0.65,
+    "owner_role": "ROLE-DEVOPS"
+  },
+  {
+    "id": "SVC-observability",
+    "name": "Synthetic Observability Platform",
+    "depends_on": [],
+    "risk_weight": 0.75,
+    "owner_role": "ROLE-SRE"
+  },
+  {
+    "id": "SVC-identity",
+    "name": "Synthetic Identity Broker",
+    "depends_on": [],
+    "risk_weight": 0.88,
+    "owner_role": "ROLE-SEC"
+  },
+  {
+    "id": "SVC-ledger",
+    "name": "Synthetic Ledger Service",
+    "depends_on": ["SVC-db"],
+    "risk_weight": 0.92,
+    "owner_role": "ROLE-DATA"
+  },
+  {
+    "id": "SVC-fraud",
+    "name": "Synthetic Fraud Scoring Service",
+    "depends_on": ["SVC-data-pipeline"],
+    "risk_weight": 0.85,
+    "owner_role": "ROLE-SEC"
+  },
+  {
+    "id": "SVC-data-pipeline",
+    "name": "Synthetic Data Pipeline",
+    "depends_on": ["SVC-db"],
+    "risk_weight": 0.8,
+    "owner_role": "ROLE-DATA"
+  }
+]

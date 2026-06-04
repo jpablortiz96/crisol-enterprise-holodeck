@@ -1,0 +1,122 @@
+[
+  {
+    "id": "L-1001",
+    "learner_label": "Learner L-1001",
+    "role_id": "ROLE-SRE",
+    "current_skills": ["SK-incident-triage", "SK-observability", "SK-communication"],
+    "certifications": ["AZ-400"],
+    "workload_profile": {"load_band": "medium", "available_learning_hours_per_week": 4, "shift_pattern": "weekday-primary"},
+    "practice_score": 78,
+    "assigned_contracts": ["CON-2031", "CON-2032"]
+  },
+  {
+    "id": "L-1002",
+    "learner_label": "Learner L-1002",
+    "role_id": "ROLE-SEC",
+    "current_skills": ["SK-security-operations", "SK-incident-triage", "SK-communication"],
+    "certifications": ["SC-200"],
+    "workload_profile": {"load_band": "high", "available_learning_hours_per_week": 2, "shift_pattern": "weekday-primary"},
+    "practice_score": 71,
+    "assigned_contracts": ["CON-2033"]
+  },
+  {
+    "id": "L-1003",
+    "learner_label": "Learner L-1003",
+    "role_id": "ROLE-DATA",
+    "current_skills": ["SK-data-engineering", "SK-observability"],
+    "certifications": ["DP-203"],
+    "workload_profile": {"load_band": "medium", "available_learning_hours_per_week": 3, "shift_pattern": "weekday-primary"},
+    "practice_score": 69,
+    "assigned_contracts": ["CON-2034"]
+  },
+  {
+    "id": "L-1004",
+    "learner_label": "Learner L-1004",
+    "role_id": "ROLE-CLOUD",
+    "current_skills": ["SK-cloud-architecture", "SK-communication", "SK-api-development"],
+    "certifications": ["AZ-305"],
+    "workload_profile": {"load_band": "low", "available_learning_hours_per_week": 6, "shift_pattern": "weekday-primary"},
+    "practice_score": 83,
+    "assigned_contracts": ["CON-2035"]
+  },
+  {
+    "id": "L-1005",
+    "learner_label": "Learner L-1005",
+    "role_id": "ROLE-DEVOPS",
+    "current_skills": ["SK-ci-cd", "SK-api-development", "SK-observability"],
+    "certifications": ["AZ-204"],
+    "workload_profile": {"load_band": "medium", "available_learning_hours_per_week": 4, "shift_pattern": "weekday-primary"},
+    "practice_score": 74,
+    "assigned_contracts": ["CON-2036"]
+  },
+  {
+    "id": "L-1006",
+    "learner_label": "Learner L-1006",
+    "role_id": "ROLE-SRE",
+    "current_skills": ["SK-database-recovery", "SK-observability", "SK-escalation-judgment"],
+    "certifications": ["DP-203"],
+    "workload_profile": {"load_band": "high", "available_learning_hours_per_week": 2, "shift_pattern": "late-support"},
+    "practice_score": 67,
+    "assigned_contracts": ["CON-2031"]
+  },
+  {
+    "id": "L-1007",
+    "learner_label": "Learner L-1007",
+    "role_id": "ROLE-DATA",
+    "current_skills": ["SK-data-engineering", "SK-database-recovery", "SK-communication"],
+    "certifications": ["DP-203", "AZ-305"],
+    "workload_profile": {"load_band": "low", "available_learning_hours_per_week": 5, "shift_pattern": "weekday-primary"},
+    "practice_score": 88,
+    "assigned_contracts": ["CON-2037"]
+  },
+  {
+    "id": "L-1008",
+    "learner_label": "Learner L-1008",
+    "role_id": "ROLE-SEC",
+    "current_skills": ["SK-security-operations", "SK-observability", "SK-escalation-judgment"],
+    "certifications": [],
+    "workload_profile": {"load_band": "medium", "available_learning_hours_per_week": 3, "shift_pattern": "weekday-primary"},
+    "practice_score": 62,
+    "assigned_contracts": ["CON-2038"]
+  },
+  {
+    "id": "L-1009",
+    "learner_label": "Learner L-1009",
+    "role_id": "ROLE-DEVOPS",
+    "current_skills": ["SK-ci-cd", "SK-communication", "SK-incident-triage"],
+    "certifications": ["AZ-400"],
+    "workload_profile": {"load_band": "medium", "available_learning_hours_per_week": 4, "shift_pattern": "weekday-primary"},
+    "practice_score": 76,
+    "assigned_contracts": ["CON-2032", "CON-2036"]
+  },
+  {
+    "id": "L-1010",
+    "learner_label": "Learner L-1010",
+    "role_id": "ROLE-CLOUD",
+    "current_skills": ["SK-cloud-architecture", "SK-observability", "SK-escalation-judgment"],
+    "certifications": ["AZ-305", "AZ-204"],
+    "workload_profile": {"load_band": "low", "available_learning_hours_per_week": 6, "shift_pattern": "weekday-primary"},
+    "practice_score": 91,
+    "assigned_contracts": ["CON-2035", "CON-2038"]
+  },
+  {
+    "id": "L-1011",
+    "learner_label": "Learner L-1011",
+    "role_id": "ROLE-SRE",
+    "current_skills": ["SK-incident-triage", "SK-database-recovery", "SK-communication"],
+    "certifications": [],
+    "workload_profile": {"load_band": "high", "available_learning_hours_per_week": 1, "shift_pattern": "late-support"},
+    "practice_score": 58,
+    "assigned_contracts": ["CON-2034"]
+  },
+  {
+    "id": "L-1012",
+    "learner_label": "Learner L-1012",
+    "role_id": "ROLE-DATA",
+    "current_skills": ["SK-data-engineering", "SK-observability", "SK-ci-cd"],
+    "certifications": ["DP-203", "AZ-400"],
+    "workload_profile": {"load_band": "medium", "available_learning_hours_per_week": 3, "shift_pattern": "weekday-primary"},
+    "practice_score": 80,
+    "assigned_contracts": ["CON-2037"]
+  }
+]

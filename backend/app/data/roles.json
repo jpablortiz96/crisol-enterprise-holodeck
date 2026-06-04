@@ -1,0 +1,61 @@
+[
+  {
+    "id": "ROLE-SRE",
+    "title": "Site Reliability Engineer",
+    "required_skills": [
+      "SK-incident-triage",
+      "SK-observability",
+      "SK-database-recovery",
+      "SK-communication",
+      "SK-escalation-judgment"
+    ],
+    "required_certifications": ["AZ-400", "AZ-305"]
+  },
+  {
+    "id": "ROLE-SEC",
+    "title": "Security Operations Analyst",
+    "required_skills": [
+      "SK-security-operations",
+      "SK-incident-triage",
+      "SK-observability",
+      "SK-communication",
+      "SK-escalation-judgment"
+    ],
+    "required_certifications": ["SC-200", "AZ-305"]
+  },
+  {
+    "id": "ROLE-DATA",
+    "title": "Data Platform Engineer",
+    "required_skills": [
+      "SK-data-engineering",
+      "SK-database-recovery",
+      "SK-observability",
+      "SK-communication"
+    ],
+    "required_certifications": ["DP-203", "AZ-305"]
+  },
+  {
+    "id": "ROLE-CLOUD",
+    "title": "Cloud Solution Architect",
+    "required_skills": [
+      "SK-cloud-architecture",
+      "SK-api-development",
+      "SK-observability",
+      "SK-communication",
+      "SK-escalation-judgment"
+    ],
+    "required_certifications": ["AZ-305", "AZ-204"]
+  },
+  {
+    "id": "ROLE-DEVOPS",
+    "title": "DevOps Engineer",
+    "required_skills": [
+      "SK-ci-cd",
+      "SK-api-development",
+      "SK-observability",
+      "SK-incident-triage",
+      "SK-communication"
+    ],
+    "required_certifications": ["AZ-400", "AZ-204"]
+  }
+]
