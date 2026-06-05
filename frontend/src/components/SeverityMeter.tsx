@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ShieldAlert } from "lucide-react";
+import { ShieldAlert, TriangleAlert } from "lucide-react";
 
 type SeverityMeterProps = {
   severity?: number;
@@ -9,33 +9,43 @@ type SeverityMeterProps = {
 };
 
 export function SeverityMeter({ severity = 0, maxSeverity = 0 }: SeverityMeterProps) {
-  const percentage = Math.min(100, Math.max(0, severity * 20));
-
   return (
-    <section className="rounded-lg border border-line bg-panel/80 p-4 shadow-soft-border">
+    <section className="war-panel metric-panel">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-xs uppercase tracking-wide text-slate-400">Severity</p>
+          <p className="panel-kicker">Incident severity</p>
           <motion.p
             key={severity}
             initial={{ opacity: 0.6, y: 4 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2 }}
-            className="mt-1 text-2xl font-semibold text-white"
+            className="mt-1 text-4xl font-semibold text-white"
           >
-            {severity || "-"}/5
+            {severity || "-"}
+            <span className="text-lg text-slate-600">/5</span>
           </motion.p>
         </div>
-        <ShieldAlert className="h-7 w-7 text-caution" />
+        <div className={`metric-icon ${severity >= 4 ? "metric-icon-danger" : ""}`}>
+          <ShieldAlert className="h-5 w-5" />
+        </div>
       </div>
-      <div className="mt-4 h-2 rounded-full bg-slate-800">
-        <motion.div
-          className="h-2 rounded-full bg-caution"
-          animate={{ width: `${percentage}%` }}
-          transition={{ duration: 0.25 }}
-        />
+      <div className="mt-5 grid grid-cols-5 gap-1.5">
+        {[1, 2, 3, 4, 5].map((level) => (
+          <motion.span
+            key={level}
+            animate={{ opacity: level <= severity ? 1 : 0.18 }}
+            className={`h-2 rounded-sm ${
+              level >= 4 ? "bg-rose-400" : level === 3 ? "bg-amber-300" : "bg-cyan-300"
+            }`}
+          />
+        ))}
       </div>
-      <p className="mt-3 text-xs text-slate-400">Peak severity: {maxSeverity || "-"}</p>
+      <div className="mt-4 flex items-center justify-between text-xs">
+        <span className="flex items-center gap-1.5 text-slate-500">
+          <TriangleAlert className="h-3.5 w-3.5" />
+          Peak observed
+        </span>
+        <span className="font-semibold text-slate-200">S{maxSeverity || "-"}</span>
+      </div>
     </section>
   );
 }

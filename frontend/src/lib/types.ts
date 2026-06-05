@@ -225,6 +225,8 @@ export type StreamEventEnvelope = {
 };
 
 export type StreamStatus = "idle" | "connecting" | "live" | "completed" | "error";
+export type PlaybackStatus = "idle" | "buffering" | "playing" | "paused" | "completed" | "error";
+export type PlaybackSpeed = 0.75 | 1 | 1.25;
 
 export type ManagerFragilityMap = {
   generated_at: string;

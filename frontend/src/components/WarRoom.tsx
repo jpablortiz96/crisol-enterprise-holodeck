@@ -1,19 +1,32 @@
 "use client";
 
 import { useEffect } from "react";
-import type { ReactNode } from "react";
 import { motion } from "framer-motion";
-import { Activity, Play, Radar, Radio, Shield, Volume2, VolumeX } from "lucide-react";
+import {
+  Activity,
+  CirclePause,
+  Gauge,
+  Play,
+  Radio,
+  RotateCcw,
+  ShieldCheck,
+  Volume2,
+  VolumeX,
+} from "lucide-react";
 import { useWarRoomStore } from "@/store/warRoomStore";
+import type { PlaybackSpeed } from "@/lib/types";
 import { CompetenceGauge } from "@/components/CompetenceGauge";
 import { CompetenceReport } from "@/components/CompetenceReport";
 import { LiveEventRail } from "@/components/LiveEventRail";
 import { ManagerFragilityMap } from "@/components/ManagerFragilityMap";
+import { NpcStage } from "@/components/NpcStage";
 import { RevenueTicker } from "@/components/RevenueTicker";
 import { ScenarioFeed } from "@/components/ScenarioFeed";
 import { SeverityMeter } from "@/components/SeverityMeter";
 import { StatusPill } from "@/components/StatusPill";
 import { TimelineGraph } from "@/components/TimelineGraph";
+
+const PLAYBACK_SPEEDS: PlaybackSpeed[] = [0.75, 1, 1.25];
 
 export function WarRoom() {
   const {
@@ -24,13 +37,22 @@ export function WarRoom() {
     readinessSummary,
     voiceStatus,
     voiceEnabled,
+    receivedEvents,
     liveEvents,
+    activeEvent,
+    speakingPersona,
     streamStatus,
+    playbackStatus,
+    playbackSpeed,
     isLoading,
     error,
     initialize,
     runSreSimulation,
     playLiveSimulation,
+    pausePlayback,
+    resumePlayback,
+    replaySession,
+    setPlaybackSpeed,
     toggleVoice,
   } = useWarRoomStore();
 
@@ -38,94 +60,171 @@ export function WarRoom() {
     void initialize();
   }, [initialize]);
 
-  const activeReport = session?.final_score ?? latestReport;
-  const latestTurn = session?.turns.at(-1);
+  const currentTurn = session?.turns.at(-1);
+  const reportReady = Boolean(session?.final_score.overall_score);
+  const activeReport = reportReady ? session?.final_score ?? null : playbackStatus === "idle" ? latestReport : null;
   const maxSeverity = session?.timeline.summary.max_severity ?? 0;
-  const currentSeverity = latestTurn?.consequence.new_severity ?? session?.timeline.summary.final_severity ?? 0;
-  const revenue = latestTurn?.consequence.revenue_at_risk ?? session?.timeline.summary.final_revenue_at_risk ?? 0;
-  const revenueDelta = latestTurn?.consequence.revenue_delta ?? 0;
+  const currentSeverity = currentTurn?.consequence.new_severity ?? session?.timeline.summary.final_severity ?? 0;
+  const revenue = currentTurn?.consequence.revenue_at_risk ?? session?.timeline.summary.final_revenue_at_risk ?? 0;
+  const revenueDelta = currentTurn?.consequence.revenue_delta ?? 0;
   const activeScore = activeReport
     ? "score" in activeReport && typeof activeReport.score === "number"
       ? activeReport.score
       : activeReport.overall_score
     : 0;
-  const streamBusy = streamStatus === "connecting" || streamStatus === "live";
+  const playbackBusy = ["buffering", "playing", "paused"].includes(playbackStatus);
+  const bufferedCount = Math.max(0, receivedEvents.length - liveEvents.length);
+  const playbackProgress = receivedEvents.length
+    ? Math.round((liveEvents.length / receivedEvents.length) * 100)
+    : 0;
+  const activeTurnNumber = activeEvent?.data.turn_number
+    ? Number(activeEvent.data.turn_number)
+    : currentTurn?.turn_number;
 
   return (
-    <main className="min-h-screen bg-ink px-4 py-5 text-slate-100 md:px-6 xl:px-8">
-      <section className="mb-5 rounded-lg border border-line bg-panel/80 p-5 shadow-soft-border">
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+    <main className="war-room-shell">
+      <header className="command-header">
+        <div className="command-brand">
+          <div className="brand-mark">
+            <ShieldCheck className="h-5 w-5" />
+          </div>
           <div>
-            <div className="mb-3 flex flex-wrap items-center gap-2">
-              <StatusPill label={health?.status === "ok" ? "Backend online" : "Backend unavailable"} status={health?.status === "ok" ? "ok" : isLoading ? "loading" : "warn"} />
-              <StatusPill label="Synthetic data only" status="ok" />
-              <StatusPill label="Grounded simulation" status="ok" />
-              <StatusPill label={`Stream ${streamStatus}`} status={streamStatus === "error" ? "warn" : streamBusy ? "loading" : "ok"} />
-              <StatusPill
-                label={voiceStatus.configured ? "Azure Speech ready" : "Text fallback active"}
-                status={voiceStatus.configured ? "ok" : "warn"}
-              />
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-semibold text-white md:text-3xl">CRISOL</h1>
+              <span className="hidden text-[10px] uppercase text-slate-500 sm:inline">Enterprise Holodeck</span>
             </div>
-            <p className="text-xs uppercase tracking-[0.28em] text-slate-500">The Enterprise Holodeck</p>
-            <h1 className="mt-1 text-4xl font-semibold tracking-normal text-white md:text-5xl">CRISOL</h1>
-            <p className="mt-3 max-w-2xl text-base text-slate-300">Battle-test your team before the fire is real.</p>
+            <p className="text-sm text-slate-400">Battle-test your team before the fire is real.</p>
           </div>
+        </div>
 
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <button
-              onClick={() => void runSreSimulation()}
-              disabled={isLoading || streamBusy}
-              className="inline-flex items-center justify-center gap-2 rounded-lg bg-signal px-4 py-3 text-sm font-semibold text-ink transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-60"
-            >
+        <div className="command-status">
+          <StatusPill
+            label={health?.status === "ok" ? "Backend online" : "Backend unavailable"}
+            status={health?.status === "ok" ? "ok" : isLoading ? "loading" : "warn"}
+          />
+          <StatusPill
+            label={
+              voiceStatus.configured
+                ? voiceEnabled
+                  ? "Azure Speech active"
+                  : "Voice muted"
+                : "Text fallback active"
+            }
+            status={voiceStatus.configured && voiceEnabled ? "ok" : "warn"}
+          />
+          <StatusPill label={`Playback ${playbackStatus}`} status={playbackStatusTone(playbackStatus)} />
+        </div>
+
+        <div className="command-controls">
+          <button
+            onClick={() => void runSreSimulation()}
+            disabled={isLoading || playbackBusy}
+            className="control-button control-secondary"
+          >
+            <Play className="h-4 w-4" />
+            {isLoading ? "Running" : "Run"}
+          </button>
+          <button
+            onClick={playLiveSimulation}
+            disabled={playbackBusy}
+            className="control-button control-primary"
+          >
+            <Radio className="h-4 w-4" />
+            Play Live Simulation
+          </button>
+          {playbackStatus === "paused" ? (
+            <button onClick={resumePlayback} className="icon-control" title="Resume Playback">
               <Play className="h-4 w-4" />
-              {isLoading ? "Running..." : "Run SRE Simulation"}
+              <span className="sr-only">Resume Playback</span>
             </button>
+          ) : (
             <button
-              onClick={playLiveSimulation}
-              disabled={streamBusy}
-              className="inline-flex items-center justify-center gap-2 rounded-lg border border-signal/40 bg-signal/10 px-4 py-3 text-sm font-semibold text-emerald-100 transition hover:bg-signal/20 disabled:cursor-not-allowed disabled:opacity-60"
+              onClick={pausePlayback}
+              disabled={!["playing", "buffering"].includes(playbackStatus)}
+              className="icon-control"
+              title="Pause Playback"
             >
-              <Radio className="h-4 w-4" />
-              {streamBusy ? "Streaming..." : "Play Live Simulation"}
+              <CirclePause className="h-4 w-4" />
+              <span className="sr-only">Pause Playback</span>
             </button>
-            <button
-              onClick={toggleVoice}
-              className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-600 bg-ink/70 px-4 py-3 text-sm font-semibold text-slate-100 transition hover:border-slate-400 hover:bg-slate-900"
-              aria-pressed={voiceEnabled}
-            >
-              {voiceEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
-              Voice: {voiceEnabled ? "On" : "Off"}
-            </button>
-            <div className="rounded-lg border border-line bg-ink/70 px-4 py-3 text-sm text-slate-300">
-              <p className="text-xs uppercase tracking-wide text-slate-500">Readiness summary</p>
-              <p className="mt-1">{readinessSummary ? `${readinessSummary.average_score.toFixed(1)} avg / ${readinessSummary.session_count} sessions` : "Awaiting first run"}</p>
-            </div>
+          )}
+          <button
+            onClick={replaySession}
+            disabled={!receivedEvents.length || playbackStatus !== "completed"}
+            className="icon-control"
+            title="Replay Session"
+          >
+            <RotateCcw className="h-4 w-4" />
+            <span className="sr-only">Replay Session</span>
+          </button>
+          <button
+            onClick={toggleVoice}
+            className="icon-control"
+            title={voiceEnabled ? "Turn Voice Off" : "Turn Voice On"}
+            aria-pressed={voiceEnabled}
+          >
+            {voiceEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+            <span className="sr-only">Voice: {voiceEnabled ? "On" : "Off"}</span>
+          </button>
+          <div className="speed-control" aria-label="Playback speed">
+            {PLAYBACK_SPEEDS.map((speed) => (
+              <button
+                key={speed}
+                onClick={() => setPlaybackSpeed(speed)}
+                className={playbackSpeed === speed ? "speed-option speed-active" : "speed-option"}
+              >
+                {speed}x
+              </button>
+            ))}
           </div>
         </div>
-        {error && <p className="mt-4 rounded-md border border-danger/40 bg-danger/10 p-3 text-sm text-rose-200">{error}</p>}
-      </section>
+      </header>
 
-      <motion.section
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.35 }}
-        className="grid gap-5 xl:grid-cols-[380px_minmax(0,1fr)_340px]"
-      >
-        <div className="space-y-5">
-          <LiveEventRail events={liveEvents} status={streamStatus} />
-          <ScenarioFeed turns={session?.turns ?? []} />
-        </div>
+      {error && <div className="error-banner">{error}</div>}
 
-        <div className="space-y-5">
+      <section className="war-room-grid">
+        <aside className="left-rail">
+          <SessionSummary
+            title={session?.scenario.title}
+            roleId={session?.scenario.role_id}
+            sessionId={session?.session_id}
+            streamStatus={streamStatus}
+            playbackStatus={playbackStatus}
+            bufferedCount={bufferedCount}
+            progress={playbackProgress}
+            readiness={readinessSummary?.average_score}
+          />
+          <LiveEventRail
+            events={liveEvents}
+            playbackStatus={playbackStatus}
+            activeSequence={activeEvent?.sequence}
+            bufferedCount={bufferedCount}
+          />
+        </aside>
+
+        <motion.section
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.32 }}
+          className="center-stage"
+        >
+          <NpcStage
+            activeEvent={activeEvent}
+            speakingPersona={speakingPersona}
+            currentTurn={currentTurn}
+            playbackStatus={playbackStatus}
+            voiceStatus={voiceStatus}
+            voiceEnabled={voiceEnabled}
+          />
           <TimelineGraph timeline={session?.timeline ?? null} />
-          <section className="grid gap-5 md:grid-cols-3">
-            <MiniSignal icon={<Radar className="h-5 w-5" />} label="Scenario" value={session?.scenario.title ?? "No active run"} />
-            <MiniSignal icon={<Activity className="h-5 w-5" />} label="Timeline" value={`${session?.timeline.summary.total_nodes ?? 0} branch nodes`} />
-            <MiniSignal icon={<Shield className="h-5 w-5" />} label="Report" value={activeReport ? activeReport.readiness_band : "Pending"} />
-          </section>
-        </div>
+          <ScenarioFeed turns={session?.turns ?? []} activeTurnNumber={activeTurnNumber} />
+        </motion.section>
 
-        <div className="space-y-5">
+        <aside className="right-rail">
+          <div className="rail-heading">
+            <Gauge className="h-4 w-4 text-cyan-300" />
+            Operational stakes
+          </div>
           <SeverityMeter severity={currentSeverity} maxSeverity={maxSeverity} />
           <RevenueTicker revenue={revenue} delta={revenueDelta} />
           <CompetenceGauge
@@ -135,10 +234,10 @@ export function WarRoom() {
             evidenceCount={activeReport?.evidence_trail.length ?? 0}
             failureModes={activeReport?.failure_modes ?? []}
           />
-        </div>
-      </motion.section>
+        </aside>
+      </section>
 
-      <section className="mt-5 grid gap-5 2xl:grid-cols-[minmax(0,1.15fr)_minmax(460px,0.85fr)]">
+      <section className="bottom-intelligence">
         <CompetenceReport report={activeReport ?? null} />
         <ManagerFragilityMap map={fragilityMap} />
       </section>
@@ -146,12 +245,81 @@ export function WarRoom() {
   );
 }
 
-function MiniSignal({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
+type SessionSummaryProps = {
+  title?: string;
+  roleId?: string;
+  sessionId?: string;
+  streamStatus: string;
+  playbackStatus: string;
+  bufferedCount: number;
+  progress: number;
+  readiness?: number;
+};
+
+function SessionSummary({
+  title,
+  roleId,
+  sessionId,
+  streamStatus,
+  playbackStatus,
+  bufferedCount,
+  progress,
+  readiness,
+}: SessionSummaryProps) {
   return (
-    <div className="rounded-lg border border-line bg-panel/80 p-4 shadow-soft-border">
-      <div className="mb-3 text-slate-400">{icon}</div>
-      <p className="text-xs uppercase tracking-wide text-slate-500">{label}</p>
-      <p className="mt-1 line-clamp-2 text-sm font-medium text-white">{value}</p>
+    <section className="war-panel session-summary-panel p-4">
+      <div className="mb-4 flex items-center justify-between">
+        <div>
+          <p className="panel-kicker">Session summary</p>
+          <h2 className="line-clamp-2 break-words text-base font-semibold leading-5 text-white">
+            {title ?? "No active incident"}
+          </h2>
+        </div>
+        <Activity className={`h-5 w-5 ${playbackStatus === "playing" ? "animate-pulse text-cyan-300" : "text-slate-500"}`} />
+      </div>
+      <dl className="space-y-3 text-xs">
+        <SummaryRow label="Role" value={roleId ?? "ROLE-SRE"} />
+        <SummaryRow label="Stream intake" value={streamStatus} />
+        <SummaryRow label="Playback" value={playbackStatus} />
+        <SummaryRow label="Buffered events" value={String(bufferedCount)} />
+        <SummaryRow label="Team readiness" value={readiness ? readiness.toFixed(1) : "Pending"} />
+      </dl>
+      <div className="mt-4">
+        <div className="mb-2 flex items-center justify-between text-[10px] uppercase text-slate-500">
+          <span>Synchronized progress</span>
+          <span>{progress}%</span>
+        </div>
+        <div className="h-1.5 overflow-hidden rounded-full bg-white/5">
+          <motion.div
+            animate={{ width: `${progress}%` }}
+            transition={{ duration: 0.25 }}
+            className="h-full rounded-full bg-cyan-300"
+          />
+        </div>
+      </div>
+      {sessionId && <p className="mt-4 truncate font-mono text-[10px] text-slate-600">{sessionId}</p>}
+    </section>
+  );
+}
+
+function SummaryRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="summary-row">
+      <dt className="summary-label">{label}</dt>
+      <dd className="summary-value" title={value}>{value}</dd>
     </div>
   );
+}
+
+function playbackStatusTone(status: string): "ok" | "warn" | "loading" | "neutral" {
+  if (status === "error") {
+    return "warn";
+  }
+  if (status === "playing" || status === "buffering") {
+    return "loading";
+  }
+  if (status === "completed") {
+    return "ok";
+  }
+  return "neutral";
 }

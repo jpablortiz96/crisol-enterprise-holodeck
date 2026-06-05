@@ -100,7 +100,9 @@
 
 4. First 30 seconds.
 
-   Show Turn 1 bad restart, `Cascade detected`, `Revenue delta`, and `NPC pressure` as they stream into the War-Room.
+   Show the animated NPC stage and synchronized Event Rail. The active speaker should remain highlighted while the matching voice line plays.
+
+   Pause briefly on the first bad restart decision. Point out `Cascade detected`, `Revenue delta`, and synchronized `NPC pressure`, then resume playback.
 
    Use this line:
 
@@ -108,16 +110,20 @@
 
 5. Show branching timeline.
 
-   Use the center graph to explain root node, decision nodes, and branch labels.
+   Use the center graph to explain the distinct root node, alarming cascade node, stabilizing recovery nodes, and animated active branch.
 
 6. Final 30 seconds.
 
-   Show `Competence Score`, the coach plan in the competence report, and `Manager Fragility Map`.
+   Show `Competence Score`, the coach plan in the competence report, `Manager Fragility Map`, and the animated NPC roster.
 
-7. Optional fallback callout.
+7. Show playback control.
+
+   Use `Replay Session` to restart the same buffered event sequence without rerunning the backend. Mention the `0.75x`, `1x`, and `1.25x` controls for recording pace.
+
+8. Optional fallback callout.
 
    If speech is not configured, point to `Text fallback active` in the live event rail. The demo should continue without Azure credentials.
 
-8. One-shot fallback path.
+9. One-shot fallback path.
 
    Click `Run SRE Simulation` when you want the full deterministic session to appear at once instead of streamed playback.

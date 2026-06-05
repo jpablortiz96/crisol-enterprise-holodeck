@@ -1,29 +1,38 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { MessageSquareWarning } from "lucide-react";
+import {
+  AlertOctagon,
+  BookOpenCheck,
+  ChevronRight,
+  MessageSquareWarning,
+} from "lucide-react";
 import type { TurnRecord } from "@/lib/types";
 import { formatCurrency, formatDelta } from "@/lib/format";
 
 type ScenarioFeedProps = {
   turns: TurnRecord[];
+  activeTurnNumber?: number;
 };
 
-export function ScenarioFeed({ turns }: ScenarioFeedProps) {
+export function ScenarioFeed({ turns, activeTurnNumber }: ScenarioFeedProps) {
   return (
-    <section className="rounded-lg border border-line bg-panel/80 p-4 shadow-soft-border">
-      <div className="mb-4 flex items-center justify-between">
+    <section className="war-panel scenario-feed-panel p-4">
+      <div className="panel-header">
         <div>
-          <p className="text-xs uppercase tracking-wide text-slate-400">Grounded simulation</p>
-          <h2 className="text-lg font-semibold text-white">Scenario Feed</h2>
+          <p className="panel-kicker">Grounded simulation</p>
+          <h2 className="panel-title">Turn-by-Turn Incident Log</h2>
         </div>
-        <MessageSquareWarning className="h-5 w-5 text-caution" />
+        <MessageSquareWarning className="h-5 w-5 text-amber-300" />
       </div>
-      <div className="max-h-[650px] space-y-3 overflow-y-auto pr-1">
+
+      <div className="scenario-feed-scroll">
         <AnimatePresence initial={false}>
           {turns.map((turn) => {
+            const active = activeTurnNumber === turn.turn_number;
             const cascadeDetected =
-              turn.consequence.newly_affected_systems.length > 0 || turn.consequence.cascade_paths.length > 0;
+              turn.consequence.newly_affected_systems.length > 0 ||
+              turn.consequence.cascade_paths.length > 0;
 
             return (
               <motion.article
@@ -31,69 +40,107 @@ export function ScenarioFeed({ turns }: ScenarioFeedProps) {
                 layout
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.22 }}
-                className="rounded-lg border border-line bg-ink/60 p-3"
+                transition={{ duration: 0.24 }}
+                className={`turn-record ${active ? "turn-active" : ""} ${
+                  turn.turn_number === 1 && cascadeDetected ? "turn-critical" : ""
+                }`}
               >
-                <div className="flex items-center justify-between gap-3">
-                  <p className="text-sm font-semibold text-white">Turn {turn.turn_number}</p>
-                  <span className="rounded-full border border-slate-600 px-2 py-0.5 text-[11px] text-slate-300">
-                    Severity {turn.consequence.new_severity}
-                  </span>
+                <div className="turn-index">
+                  <span>{String(turn.turn_number).padStart(2, "0")}</span>
+                  <div className="turn-line" />
                 </div>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  <span className="rounded-full border border-caution/40 bg-caution/10 px-2 py-0.5 text-[11px] text-amber-100">
-                    NPC pressure
-                  </span>
-                  {cascadeDetected && (
-                    <span className="rounded-full border border-danger/40 bg-danger/10 px-2 py-0.5 text-[11px] text-rose-100">
-                      Cascade detected
-                    </span>
-                  )}
-                  <span className="rounded-full border border-slate-600 px-2 py-0.5 text-[11px] text-slate-300">
-                    Cited evidence {turn.citations.length}
-                  </span>
-                </div>
-                <p className="mt-2 text-sm leading-6 text-slate-300">{turn.situation}</p>
-                <div className="mt-3 rounded-md border border-caution/30 bg-caution/10 p-2">
-                  <p className="text-xs uppercase tracking-wide text-amber-200">Decision taken</p>
-                  <p className="mt-1 text-sm text-white">{turn.decision.label}</p>
-                </div>
-                <p className="mt-3 text-sm text-slate-200">{turn.consequence.world_delta}</p>
-                <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
-                  <span className="rounded-md bg-slate-900/80 p-2 text-slate-300">
-                    Risk {formatCurrency(turn.consequence.revenue_at_risk)}
-                  </span>
-                  <span className="rounded-md bg-slate-900/80 p-2 text-slate-300">
-                    Revenue delta {formatDelta(turn.consequence.revenue_delta)}
-                  </span>
-                </div>
-                <div className="mt-3 space-y-2">
-                  {turn.npc_reactions.slice(0, 3).map((reaction) => (
-                    <div key={`${turn.turn_number}-${reaction.persona}`} className="rounded-md bg-slate-950/60 p-2">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="rounded-full border border-caution/40 bg-caution/10 px-2 py-0.5 text-[11px] text-amber-100">
-                          NPC pressure
-                        </span>
-                        <p className="text-xs font-medium text-slate-100">{reaction.persona}</p>
-                        <span className="rounded-full border border-slate-700 px-2 py-0.5 text-[11px] text-slate-400">
-                          {reaction.voice?.provider === "azure-speech" ? "Azure Speech" : "Text fallback"}
-                        </span>
-                      </div>
-                      <p className="mt-1 text-xs leading-5 text-slate-400">{reaction.message}</p>
+
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <p className="text-[10px] uppercase text-slate-500">Operational turn</p>
+                      <h3 className="line-clamp-2 break-words text-sm font-semibold text-white">
+                        {turn.decision.id === "pending" ? "Awaiting decision" : turn.decision.label}
+                      </h3>
                     </div>
-                  ))}
+                    <div className="flex items-center gap-2">
+                      {active && <span className="live-chip">Live</span>}
+                      <span className="severity-chip">S{turn.consequence.new_severity || "-"}</span>
+                    </div>
+                  </div>
+
+                  <p className="mt-3 line-clamp-3 break-words text-sm leading-6 text-slate-300">
+                    {turn.situation}
+                  </p>
+
+                  <div className="decision-strip">
+                    <ChevronRight className="h-4 w-4 shrink-0 text-cyan-300" />
+                    <span>{turn.decision.description}</span>
+                  </div>
+
+                  {turn.consequence.world_delta !== "Awaiting consequence update." && (
+                    <div className="mt-3 flex gap-3 border-l-2 border-amber-300/70 bg-amber-300/[0.04] p-3">
+                      <AlertOctagon className="mt-0.5 h-4 w-4 shrink-0 text-amber-300" />
+                      <p className="text-xs leading-5 text-slate-300">{turn.consequence.world_delta}</p>
+                    </div>
+                  )}
+
+                  <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                    <TurnMetric label="Revenue at risk" value={formatCurrency(turn.consequence.revenue_at_risk)} />
+                    <TurnMetric label="Revenue delta" value={formatDelta(turn.consequence.revenue_delta)} danger={turn.consequence.revenue_delta > 0} />
+                    <TurnMetric label="Cited evidence" value={String(turn.citations.length)} />
+                  </div>
+
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    {cascadeDetected && <SignalBadge label="Cascade detected" danger />}
+                    {turn.consequence.newly_affected_systems.slice(0, 3).map((system) => (
+                      <SignalBadge key={system} label={system} />
+                    ))}
+                    {turn.citations.length > 0 && (
+                      <span className="inline-flex items-center gap-1 text-[10px] text-slate-500">
+                        <BookOpenCheck className="h-3 w-3" />
+                        grounded
+                      </span>
+                    )}
+                  </div>
+
+                  {turn.npc_reactions.length > 0 && (
+                    <div className="mt-4 grid gap-2 lg:grid-cols-2">
+                      {turn.npc_reactions.map((reaction) => (
+                        <div key={`${turn.turn_number}-${reaction.persona}`} className="npc-reaction-line">
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="text-[11px] font-semibold text-white">{reaction.persona}</p>
+                            <span className="text-[9px] uppercase text-slate-600">
+                              {reaction.voice?.provider === "azure-speech" ? "Azure Speech" : "Text fallback"}
+                            </span>
+                          </div>
+                          <p className="mt-1 line-clamp-2 text-[11px] leading-4 text-slate-400">
+                            {reaction.message}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </motion.article>
             );
           })}
         </AnimatePresence>
+
         {!turns.length && (
-          <div className="rounded-lg border border-dashed border-slate-700 p-5 text-sm text-slate-400">
-            Run a simulation to generate the first competence report.
+          <div className="empty-state">
+            Run or stream a simulation to create the operational incident log.
           </div>
         )}
       </div>
     </section>
   );
+}
+
+function TurnMetric({ label, value, danger = false }: { label: string; value: string; danger?: boolean }) {
+  return (
+    <div className="turn-metric">
+      <p className="text-[9px] uppercase text-slate-600">{label}</p>
+      <p className={`mt-1 text-xs font-semibold ${danger ? "text-rose-300" : "text-slate-200"}`}>{value}</p>
+    </div>
+  );
+}
+
+function SignalBadge({ label, danger = false }: { label: string; danger?: boolean }) {
+  return <span className={danger ? "signal-badge signal-danger" : "signal-badge"}>{label}</span>;
 }

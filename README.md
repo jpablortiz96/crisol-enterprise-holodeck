@@ -11,7 +11,7 @@ CRISOL turns enterprise learning into realistic, measurable practice. It connect
 - How ready is a learner for a target role?
 - Which skills and certifications are missing?
 
-The Phase 1 scaffold is intentionally local and synthetic. Phase 2 adds a local citation-first grounding layer over approved synthetic documents, plus a Foundry IQ adapter skeleton for later live configuration. Phase 3 adds the first deterministic multi-agent simulation loop for terminal demos. Phase 4 adds replay-ready branching timelines and local session storage. Phase 5 adds competence reporting and aggregate manager insights. Phase 6 adds the first browser-based War-Room frontend. Phase 7 adds live scenario playback over Server-Sent Events and cinematic War-Room updates. Phase 7.2 makes Azure Speech the primary NPC voice layer while retaining a safe text-only fallback.
+The Phase 1 scaffold is intentionally local and synthetic. Phase 2 adds a local citation-first grounding layer over approved synthetic documents, plus a Foundry IQ adapter skeleton for later live configuration. Phase 3 adds the first deterministic multi-agent simulation loop for terminal demos. Phase 4 adds replay-ready branching timelines and local session storage. Phase 5 adds competence reporting and aggregate manager insights. Phase 6 adds the first browser-based War-Room frontend. Phase 7 adds live scenario playback over Server-Sent Events and cinematic War-Room updates. Phase 7.2 makes Azure Speech the primary NPC voice layer while retaining a safe text-only fallback. Phase 7.3 adds synchronized playback direction, replay controls, playback speed, and animated NPC presence. Phase 7.4 adds bounded panel layouts and deterministic Dagre positioning for the decision graph.
 
 ## Why It Is Different
 
@@ -38,6 +38,9 @@ The current backend includes:
 - Azure Speech synthesis for NPC reactions when configured.
 - Per-session MP3 caching under ignored local storage at `backend/.crisol_audio/`.
 - A safe text-only fallback when Speech credentials, SDK support, or synthesis are unavailable.
+- A frontend Playback Director that buffers SSE intake and deliberately advances visible events.
+- Pause, resume, replay, and `0.75x`, `1x`, and `1.25x` playback controls.
+- Animated 2D/2.5D persona cards for VP Operations, Product Manager, Database Lead, and Support Lead.
 
 The backend exposes:
 
@@ -111,12 +114,17 @@ Open:
 http://localhost:3000
 ```
 
-The War-Room includes two demo buttons:
+The War-Room includes:
 
 - `Run SRE Simulation`
 - `Play Live Simulation`
+- `Pause Playback` and `Resume Playback`
+- `Replay Session`
+- `0.75x`, `1x`, and `1.25x` speed controls
 
-`Play Live Simulation` connects to `GET /scenario/stream?role_id=ROLE-SRE` and updates the event rail, scenario feed, timeline, consequence metrics, competence score, coach plan, and manager snapshot as events arrive. With Voice enabled, Azure Speech audio is queued so NPC lines do not overlap. Without valid Speech configuration, NPC reactions continue through the text-only fallback.
+`Play Live Simulation` connects to `GET /scenario/stream?role_id=ROLE-SRE`. Stream intake and visible playback are separated: events can buffer immediately while the Playback Director advances the Event Rail, NPC stage, timeline, consequence metrics, competence score, coach plan, and manager snapshot in sequence. NPC reactions block progression until Azure Speech audio ends or reaches a safety timeout. Without valid Speech configuration, the same synchronized pacing uses the text-only fallback.
+
+The War-Room uses a high-density mission-control layout designed for 16:9 recording. Animated persona cards expose speaker state, pressure level, role, and status without requiring a full 3D engine. Side rails and report sections use bounded internal scrolling, while the decision graph uses fixed-size nodes, explicit handles, and a deterministic left-to-right Dagre layout that refits as timeline revisions arrive.
 
 ## Azure Speech
 
@@ -179,4 +187,7 @@ http://127.0.0.1:8000/manager/readiness-summary
 - [x] Phase 7 SSE live playback.
 - [x] Phase 7 optional speech fallback.
 - [x] Phase 7.2 Azure Speech synthesis and queued NPC playback.
+- [x] Phase 7.3 synchronized Playback Director.
+- [x] Phase 7.3 premium mission-control UI and animated NPC stage.
+- [x] Phase 7.4 bounded War-Room layout and deterministic decision graph.
 - [ ] Live Foundry IQ indexing and retrieval.

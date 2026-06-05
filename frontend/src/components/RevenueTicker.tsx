@@ -10,34 +10,37 @@ type RevenueTickerProps = {
 };
 
 export function RevenueTicker({ revenue = 0, delta = 0 }: RevenueTickerProps) {
-  const positive = delta > 0;
+  const increased = delta > 0;
 
   return (
-    <section className="rounded-lg border border-line bg-panel/80 p-4 shadow-soft-border">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-xs uppercase tracking-wide text-slate-400">Revenue at risk</p>
+    <section className="war-panel metric-panel">
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <p className="panel-kicker">Revenue at risk</p>
           <motion.p
             key={revenue}
             initial={{ opacity: 0.6, y: 4 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2 }}
-            className="mt-1 text-2xl font-semibold text-white"
+            className="mt-1 truncate text-3xl font-semibold text-white"
           >
             {formatCurrency(revenue)}
           </motion.p>
         </div>
-        {positive ? <TrendingUp className="h-7 w-7 text-danger" /> : <TrendingDown className="h-7 w-7 text-signal" />}
+        <div className={`metric-icon ${increased ? "metric-icon-danger" : "metric-icon-ok"}`}>
+          {increased ? <TrendingUp className="h-5 w-5" /> : <TrendingDown className="h-5 w-5" />}
+        </div>
       </div>
-      <motion.p
+      <motion.div
         key={delta}
         initial={{ opacity: 0.6, y: 4 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.2 }}
-        className={`mt-3 text-sm ${positive ? "text-rose-200" : "text-emerald-200"}`}
+        className={`mt-5 border-l-2 pl-3 ${
+          increased ? "border-rose-400 text-rose-200" : "border-emerald-400 text-emerald-200"
+        }`}
       >
-        Revenue delta {formatDelta(delta)} from previous branch
-      </motion.p>
+        <p className="text-[9px] uppercase text-slate-600">Revenue delta</p>
+        <p className="mt-1 text-sm font-semibold">{formatDelta(delta)}</p>
+      </motion.div>
     </section>
   );
 }

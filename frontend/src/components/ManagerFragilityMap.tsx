@@ -9,13 +9,13 @@ type ManagerFragilityMapProps = {
 
 export function ManagerFragilityMap({ map }: ManagerFragilityMapProps) {
   return (
-    <section className="rounded-lg border border-line bg-panel/80 p-5 shadow-soft-border">
-      <div className="flex items-center justify-between">
+    <section className="war-panel report-panel p-5">
+      <div className="panel-header !mb-0 !p-0">
         <div>
-          <p className="text-xs uppercase tracking-wide text-slate-400">Synthetic data only</p>
-          <h2 className="text-xl font-semibold text-white">Manager Fragility Map</h2>
+          <p className="panel-kicker">Synthetic data only</p>
+          <h2 className="panel-title">Manager Fragility Map</h2>
         </div>
-        <Network className="h-6 w-6 text-caution" />
+        <Network className="h-5 w-5 text-amber-300" />
       </div>
 
       {!map || map.session_count === 0 ? (
@@ -23,7 +23,7 @@ export function ManagerFragilityMap({ map }: ManagerFragilityMapProps) {
           Run a simulation to generate manager-level readiness signals.
         </div>
       ) : (
-        <div className="mt-5 space-y-5">
+        <div className="report-panel-scroll mt-5 space-y-5">
           <div className="grid gap-4 md:grid-cols-4">
             <Metric label="Average score" value={map.team_readiness.average_score.toFixed(1)} />
             <Metric label="Sessions" value={String(map.session_count)} />
@@ -34,7 +34,7 @@ export function ManagerFragilityMap({ map }: ManagerFragilityMapProps) {
           <div className="grid gap-4 lg:grid-cols-3">
             <Panel title="Role risk cards">
               {map.role_risk.slice(0, 4).map((role) => (
-                <div key={role.role_id} className="rounded-md border border-line bg-ink/60 p-3">
+                <div key={role.role_id} className="border-l-2 border-rose-400/30 bg-black/10 p-3">
                   <div className="flex items-center justify-between">
                     <p className="text-sm font-semibold text-white">{role.role_id}</p>
                     <span className="rounded-full border border-slate-600 px-2 py-0.5 text-[11px] text-slate-300">{role.risk_band}</span>
@@ -47,7 +47,7 @@ export function ManagerFragilityMap({ map }: ManagerFragilityMapProps) {
 
             <Panel title="Skill fragility">
               {map.skill_fragility.slice(0, 5).map((skill) => (
-                <div key={skill.skill_id} className="rounded-md border border-line bg-ink/60 p-3">
+                <div key={skill.skill_id} className="border-l-2 border-amber-300/30 bg-black/10 p-3">
                   <div className="flex items-center justify-between">
                     <p className="text-sm font-semibold text-white">{skill.skill_id}</p>
                     <span className="text-sm text-caution">{skill.risk_score.toFixed(1)}</span>
@@ -59,7 +59,7 @@ export function ManagerFragilityMap({ map }: ManagerFragilityMapProps) {
 
             <Panel title="Certification readiness">
               {map.certification_readiness.slice(0, 5).map((cert) => (
-                <div key={cert.certification_id} className="flex items-center justify-between rounded-md border border-line bg-ink/60 p-3">
+                <div key={cert.certification_id} className="flex items-center justify-between border-b border-white/5 p-3">
                   <div>
                     <p className="text-sm font-semibold text-white">{cert.certification_id}</p>
                     <p className="text-xs text-slate-500">{cert.risk}</p>
@@ -70,7 +70,7 @@ export function ManagerFragilityMap({ map }: ManagerFragilityMapProps) {
             </Panel>
           </div>
 
-          <div className="flex items-center gap-2 rounded-lg border border-signal/30 bg-signal/10 p-3 text-sm text-emerald-100">
+          <div className="flex items-center gap-2 border-l-2 border-emerald-300/60 bg-emerald-300/[0.035] p-3 text-sm text-emerald-100">
             <ShieldCheck className="h-4 w-4" />
             <span>
               <span className="font-semibold">Privacy note: </span>
@@ -85,8 +85,8 @@ export function ManagerFragilityMap({ map }: ManagerFragilityMapProps) {
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-line bg-ink/60 p-3">
-      <p className="text-xs uppercase tracking-wide text-slate-500">{label}</p>
+    <div className="border-l border-white/10 pl-3">
+      <p className="text-[9px] uppercase text-slate-600">{label}</p>
       <p className="mt-1 text-lg font-semibold text-white">{value}</p>
     </div>
   );

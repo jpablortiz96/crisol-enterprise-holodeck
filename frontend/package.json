@@ -8,12 +8,13 @@
     "start": "next start"
   },
   "dependencies": {
+    "@dagrejs/dagre": "^3.0.0",
+    "@xyflow/react": "^12.11.0",
     "framer-motion": "^11.18.2",
     "lucide-react": "^0.468.0",
     "next": "^16.2.7",
     "react": "^19.2.1",
     "react-dom": "^19.2.1",
-    "reactflow": "^11.11.4",
     "zustand": "^5.0.2"
   },
   "devDependencies": {

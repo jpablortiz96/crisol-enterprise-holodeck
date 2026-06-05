@@ -11,6 +11,7 @@ import {
   runScenario,
   scenarioStreamUrl,
 } from "@/lib/api";
+import { PlaybackDirector } from "@/lib/playback";
 import type {
   Citation,
   CoachPlan,
@@ -19,6 +20,8 @@ import type {
   HealthResponse,
   ManagerFragilityMap,
   NPCReaction,
+  PlaybackSpeed,
+  PlaybackStatus,
   ReadinessSummary,
   SimulationRun,
   StreamEventEnvelope,
@@ -38,13 +41,22 @@ type WarRoomState = {
   readinessSummary: ReadinessSummary | null;
   voiceStatus: VoiceStatusResponse;
   voiceEnabled: boolean;
+  receivedEvents: StreamEventEnvelope[];
   liveEvents: StreamEventEnvelope[];
+  activeEvent: StreamEventEnvelope | null;
+  speakingPersona: string | null;
   streamStatus: StreamStatus;
+  playbackStatus: PlaybackStatus;
+  playbackSpeed: PlaybackSpeed;
   isLoading: boolean;
   error: string | null;
   initialize: () => Promise<void>;
   runSreSimulation: () => Promise<void>;
   playLiveSimulation: () => void;
+  pausePlayback: () => void;
+  resumePlayback: () => void;
+  replaySession: () => void;
+  setPlaybackSpeed: (speed: PlaybackSpeed) => void;
   toggleVoice: () => void;
 };
 
@@ -62,10 +74,6 @@ const STREAM_EVENT_NAMES: StreamEventName[] = [
   "session_completed",
 ];
 
-let liveSource: EventSource | null = null;
-let audioQueue: string[] = [];
-let activeAudio: HTMLAudioElement | null = null;
-
 const TEXT_ONLY_VOICE_STATUS: VoiceStatusResponse = {
   configured: false,
   provider: "text-only",
@@ -73,237 +81,291 @@ const TEXT_ONLY_VOICE_STATUS: VoiceStatusResponse = {
   voices: {},
 };
 
-export const useWarRoomStore = create<WarRoomState>((set, get) => ({
-  health: null,
-  session: null,
-  latestReport: null,
-  fragilityMap: null,
-  readinessSummary: null,
-  voiceStatus: TEXT_ONLY_VOICE_STATUS,
-  voiceEnabled: true,
-  liveEvents: [],
-  streamStatus: "idle",
-  isLoading: false,
-  error: null,
-  initialize: async () => {
-    set({ isLoading: true, error: null });
-    try {
-      const [health, latestReport, readinessSummary, fragilityMap, voiceStatus] = await Promise.allSettled([
-        getHealth(),
-        getLatestReport(),
-        getReadinessSummary(),
-        getFragilityMap(),
-        getVoiceStatus(),
-      ]);
+let liveSource: EventSource | null = null;
+let activeAudio: HTMLAudioElement | null = null;
+let activeAudioResolve: (() => void) | null = null;
+let activeAudioTimeout: number | null = null;
 
-      set({
-        health: health.status === "fulfilled" ? health.value : null,
-        latestReport: latestReport.status === "fulfilled" ? latestReport.value : null,
-        readinessSummary: readinessSummary.status === "fulfilled" ? readinessSummary.value : null,
-        fragilityMap: fragilityMap.status === "fulfilled" ? fragilityMap.value : null,
-        voiceStatus: voiceStatus.status === "fulfilled" ? voiceStatus.value : TEXT_ONLY_VOICE_STATUS,
-        isLoading: false,
-      });
-    } catch (error) {
-      set({ isLoading: false, error: error instanceof Error ? error.message : "Initialization failed" });
-    }
-  },
-  runSreSimulation: async () => {
-    liveSource?.close();
-    liveSource = null;
-    stopAudioPlayback();
-    set({ isLoading: true, error: null, liveEvents: [], streamStatus: "idle" });
-    try {
-      const session = await runScenario("ROLE-SRE");
-      const [fragilityMap, readinessSummary, latestReport] = await Promise.allSettled([
-        getFragilityMap(),
-        getReadinessSummary(),
-        getLatestReport(),
-      ]);
+export const useWarRoomStore = create<WarRoomState>((set, get) => {
+  const director = new PlaybackDirector({
+    onEvent: (event) => {
+      set((state) => reducePlaybackEvent(state, event));
+    },
+    onStatus: (playbackStatus) => {
+      set({ playbackStatus });
+    },
+    onSpeaker: (speakingPersona) => {
+      set({ speakingPersona });
+    },
+    playVoice: (voice, speed) => playVoice(voice, speed),
+    shouldPlayVoice: () => get().voiceEnabled,
+  });
 
-      set({
-        session,
-        latestReport: latestReport.status === "fulfilled" ? latestReport.value : session.final_score,
-        fragilityMap: fragilityMap.status === "fulfilled" ? fragilityMap.value : null,
-        readinessSummary: readinessSummary.status === "fulfilled" ? readinessSummary.value : null,
-        isLoading: false,
-      });
-    } catch (error) {
-      set({ isLoading: false, error: error instanceof Error ? error.message : "Simulation failed" });
-    }
-  },
-  playLiveSimulation: () => {
-    if (typeof EventSource === "undefined") {
-      set({ streamStatus: "error", error: "Live streaming is not supported by this browser." });
-      return;
-    }
-
-    liveSource?.close();
-    stopAudioPlayback();
-    const source = new EventSource(scenarioStreamUrl("ROLE-SRE"));
-    liveSource = source;
-
-    set({
-      session: null,
-      liveEvents: [],
-      streamStatus: "connecting",
-      isLoading: false,
-      error: null,
-    });
-
-    source.onopen = () => {
-      set({ streamStatus: "live", error: null });
-    };
-
-    const handleEvent = (message: MessageEvent<string>) => {
+  return {
+    health: null,
+    session: null,
+    latestReport: null,
+    fragilityMap: null,
+    readinessSummary: null,
+    voiceStatus: TEXT_ONLY_VOICE_STATUS,
+    voiceEnabled: true,
+    receivedEvents: [],
+    liveEvents: [],
+    activeEvent: null,
+    speakingPersona: null,
+    streamStatus: "idle",
+    playbackStatus: "idle",
+    playbackSpeed: 1,
+    isLoading: false,
+    error: null,
+    initialize: async () => {
+      set({ isLoading: true, error: null });
       try {
-        const payload = JSON.parse(message.data) as StreamEventEnvelope;
-        set((state) => reduceStreamEvent(state, payload));
-        const voice = voiceFromPayload(payload);
-        if (payload.event === "npc_reaction" && voice?.audio_url && get().voiceEnabled) {
-          enqueueAudio(voice.audio_url);
-        }
+        const [health, latestReport, readinessSummary, fragilityMap, voiceStatus] = await Promise.allSettled([
+          getHealth(),
+          getLatestReport(),
+          getReadinessSummary(),
+          getFragilityMap(),
+          getVoiceStatus(),
+        ]);
 
-        if (payload.event === "session_completed") {
-          source.close();
-          if (liveSource === source) {
-            liveSource = null;
-          }
-          void getReadinessSummary()
-            .then((readinessSummary) => set({ readinessSummary }))
-            .catch(() => undefined);
-        }
+        set({
+          health: health.status === "fulfilled" ? health.value : null,
+          latestReport: latestReport.status === "fulfilled" ? latestReport.value : null,
+          readinessSummary: readinessSummary.status === "fulfilled" ? readinessSummary.value : null,
+          fragilityMap: fragilityMap.status === "fulfilled" ? fragilityMap.value : null,
+          voiceStatus: voiceStatus.status === "fulfilled" ? voiceStatus.value : TEXT_ONLY_VOICE_STATUS,
+          isLoading: false,
+        });
       } catch (error) {
-        source.close();
-        if (liveSource === source) {
-          liveSource = null;
-        }
+        set({ isLoading: false, error: error instanceof Error ? error.message : "Initialization failed" });
+      }
+    },
+    runSreSimulation: async () => {
+      closeLiveSource();
+      director.reset();
+      stopAudioPlayback();
+      set({
+        isLoading: true,
+        error: null,
+        receivedEvents: [],
+        liveEvents: [],
+        activeEvent: null,
+        speakingPersona: null,
+        streamStatus: "idle",
+      });
+      try {
+        const session = await runScenario("ROLE-SRE");
+        const [fragilityMap, readinessSummary, latestReport] = await Promise.allSettled([
+          getFragilityMap(),
+          getReadinessSummary(),
+          getLatestReport(),
+        ]);
+
+        set({
+          session,
+          latestReport: latestReport.status === "fulfilled" ? latestReport.value : session.final_score,
+          fragilityMap: fragilityMap.status === "fulfilled" ? fragilityMap.value : null,
+          readinessSummary: readinessSummary.status === "fulfilled" ? readinessSummary.value : null,
+          isLoading: false,
+        });
+      } catch (error) {
+        set({ isLoading: false, error: error instanceof Error ? error.message : "Simulation failed" });
+      }
+    },
+    playLiveSimulation: () => {
+      if (typeof EventSource === "undefined") {
         set({
           streamStatus: "error",
-          error: error instanceof Error ? error.message : "Live stream parsing failed",
+          playbackStatus: "error",
+          error: "Live streaming is not supported by this browser.",
         });
-      }
-    };
-
-    STREAM_EVENT_NAMES.forEach((name) => {
-      source.addEventListener(name, handleEvent as EventListener);
-    });
-
-    source.onerror = () => {
-      if (get().streamStatus === "completed") {
         return;
       }
-      source.close();
-      if (liveSource === source) {
-        liveSource = null;
-      }
-      set({ streamStatus: "error", error: "Live stream connection failed." });
-    };
-  },
-  toggleVoice: () => {
-    const nextEnabled = !get().voiceEnabled;
-    if (!nextEnabled) {
+
+      closeLiveSource();
+      director.reset();
+      director.setSpeed(get().playbackSpeed);
       stopAudioPlayback();
-    }
-    set({ voiceEnabled: nextEnabled });
-  },
-}));
 
-function reduceStreamEvent(state: WarRoomState, payload: StreamEventEnvelope): Partial<WarRoomState> {
-  const duplicate = state.liveEvents.some(
-    (event) => event.session_id === payload.session_id && event.sequence === payload.sequence,
-  );
-  if (duplicate) {
-    return {};
-  }
+      const source = new EventSource(scenarioStreamUrl("ROLE-SRE"));
+      liveSource = source;
+      set({
+        session: null,
+        fragilityMap: null,
+        receivedEvents: [],
+        liveEvents: [],
+        activeEvent: null,
+        speakingPersona: null,
+        streamStatus: "connecting",
+        playbackStatus: "buffering",
+        isLoading: false,
+        error: null,
+      });
 
+      source.onopen = () => {
+        set({ streamStatus: "live", error: null });
+      };
+
+      const handleEvent = (message: MessageEvent<string>) => {
+        try {
+          const payload = JSON.parse(message.data) as StreamEventEnvelope;
+          set((state) => ({
+            receivedEvents: appendUniqueEvent(state.receivedEvents, payload),
+            streamStatus: payload.event === "session_completed" ? "completed" : "live",
+          }));
+          director.enqueue(payload);
+
+          if (payload.event === "session_completed") {
+            closeLiveSource();
+            void getReadinessSummary()
+              .then((readinessSummary) => set({ readinessSummary }))
+              .catch(() => undefined);
+          }
+        } catch (error) {
+          closeLiveSource();
+          set({
+            streamStatus: "error",
+            playbackStatus: "error",
+            error: error instanceof Error ? error.message : "Live stream parsing failed",
+          });
+        }
+      };
+
+      STREAM_EVENT_NAMES.forEach((name) => {
+        source.addEventListener(name, handleEvent as EventListener);
+      });
+
+      source.onerror = () => {
+        if (get().streamStatus === "completed") {
+          return;
+        }
+        closeLiveSource();
+        set({
+          streamStatus: "error",
+          playbackStatus: "error",
+          error: "Live stream connection failed.",
+        });
+      };
+    },
+    pausePlayback: () => {
+      director.pause();
+      activeAudio?.pause();
+    },
+    resumePlayback: () => {
+      director.resume();
+      if (activeAudio?.src) {
+        void activeAudio.play().catch(() => finishActiveAudio());
+      }
+    },
+    replaySession: () => {
+      if (!director.getArchive().length) {
+        return;
+      }
+      stopAudioPlayback();
+      set({
+        session: null,
+        fragilityMap: null,
+        liveEvents: [],
+        activeEvent: null,
+        speakingPersona: null,
+        playbackStatus: "buffering",
+        error: null,
+      });
+      director.replay();
+    },
+    setPlaybackSpeed: (playbackSpeed) => {
+      director.setSpeed(playbackSpeed);
+      if (activeAudio) {
+        activeAudio.playbackRate = playbackSpeed;
+      }
+      set({ playbackSpeed });
+    },
+    toggleVoice: () => {
+      const nextEnabled = !get().voiceEnabled;
+      if (!nextEnabled) {
+        stopAudioPlayback();
+      }
+      set({ voiceEnabled: nextEnabled });
+    },
+  };
+});
+
+function reducePlaybackEvent(state: WarRoomState, payload: StreamEventEnvelope): Partial<WarRoomState> {
   const update: Partial<WarRoomState> = {
-    liveEvents: [...state.liveEvents, payload].slice(-80),
-    streamStatus: payload.event === "session_completed" ? "completed" : "live",
-    isLoading: false,
+    liveEvents: appendUniqueEvent(state.liveEvents, payload).slice(-80),
+    activeEvent: payload,
     error: null,
   };
 
   let session = state.session ?? createEmptySession(payload.session_id, "ROLE-SRE");
 
   if (payload.event === "session_started") {
-    session = createEmptySession(payload.session_id, String(payload.data.role_id ?? "ROLE-SRE"));
-    update.session = session;
+    update.session = createEmptySession(payload.session_id, String(payload.data.role_id ?? "ROLE-SRE"));
     return update;
   }
 
   if (payload.event === "scenario_intro") {
-    session = {
+    update.session = {
       ...session,
       scenario: payload.data.scenario as SimulationRun["scenario"],
     };
-    update.session = session;
     return update;
   }
 
   if (payload.event === "turn_started") {
-    session = upsertTurn(session, Number(payload.data.turn_number), {
+    update.session = upsertTurn(session, Number(payload.data.turn_number), {
       situation: String(payload.data.situation ?? ""),
       citations: (payload.data.citations ?? []) as Citation[],
     });
-    update.session = session;
     return update;
   }
 
   if (payload.event === "decision_selected") {
-    session = upsertTurn(session, Number(payload.data.turn_number), {
+    update.session = upsertTurn(session, Number(payload.data.turn_number), {
       decision: payload.data.decision as TurnRecord["decision"],
     });
-    update.session = session;
     return update;
   }
 
   if (payload.event === "npc_reaction") {
     const reaction = payload.data.reaction as NPCReaction;
     const voice = voiceFromPayload(payload);
-    session = appendNpcReaction(
+    update.session = appendNpcReaction(
       session,
       Number(payload.data.turn_number),
       voice ? { ...reaction, voice } : reaction,
     );
-    update.session = session;
     return update;
   }
 
   if (payload.event === "consequence_delta") {
-    session = upsertTurn(session, Number(payload.data.turn_number), {
+    update.session = upsertTurn(session, Number(payload.data.turn_number), {
       consequence: payload.data.consequence as ConsequenceDelta,
     });
-    update.session = session;
     return update;
   }
 
   if (payload.event === "timeline_updated") {
-    session = {
+    update.session = {
       ...session,
       timeline: payload.data.timeline as TimelineResponse,
     };
-    update.session = session;
     return update;
   }
 
   if (payload.event === "score_final") {
     const finalScore = payload.data.final_score as CompetenceReport & { score?: number };
-    session = {
-      ...session,
-      final_score: finalScore,
-    };
-    update.session = session;
+    update.session = { ...session, final_score: finalScore };
     update.latestReport = finalScore;
     return update;
   }
 
   if (payload.event === "coach_plan") {
-    session = {
+    update.session = {
       ...session,
       coach_plan: payload.data.coach_plan as CoachPlan,
     };
-    update.session = session;
     return update;
   }
 
@@ -315,14 +377,24 @@ function reduceStreamEvent(state: WarRoomState, payload: StreamEventEnvelope): P
 
   if (payload.event === "session_completed") {
     const completedSession = payload.data.session as SimulationRun;
-    update.session = mergeReactionVoices(completedSession, session);
-    update.latestReport = completedSession.final_score;
-    update.streamStatus = "completed";
+    const mergedSession = mergeReactionVoices(completedSession, session);
+    update.session = mergedSession;
+    update.latestReport = mergedSession.final_score;
     return update;
   }
 
   update.session = session;
   return update;
+}
+
+function appendUniqueEvent(
+  events: StreamEventEnvelope[],
+  payload: StreamEventEnvelope,
+): StreamEventEnvelope[] {
+  if (events.some((event) => event.session_id === payload.session_id && event.sequence === payload.sequence)) {
+    return events;
+  }
+  return [...events, payload];
 }
 
 function upsertTurn(session: SimulationRun, turnNumber: number, patch: Partial<TurnRecord>): SimulationRun {
@@ -343,8 +415,9 @@ function upsertTurn(session: SimulationRun, turnNumber: number, patch: Partial<T
 
 function appendNpcReaction(session: SimulationRun, turnNumber: number, reaction: NPCReaction): SimulationRun {
   const currentTurn = session.turns.find((turn) => turn.turn_number === turnNumber) ?? createEmptyTurn(turnNumber);
-  const nextReactions = [...currentTurn.npc_reactions, reaction];
-  return upsertTurn(session, turnNumber, { npc_reactions: nextReactions });
+  return upsertTurn(session, turnNumber, {
+    npc_reactions: [...currentTurn.npc_reactions, reaction],
+  });
 }
 
 function voiceFromPayload(payload: StreamEventEnvelope): VoiceSynthesisResult | undefined {
@@ -372,47 +445,48 @@ function mergeReactionVoices(completedSession: SimulationRun, streamedSession: S
   };
 }
 
-function enqueueAudio(audioUrl: string): void {
-  if (typeof Audio === "undefined") {
-    return;
-  }
-  audioQueue.push(apiAssetUrl(audioUrl));
-  void playNextAudio();
-}
-
-async function playNextAudio(): Promise<void> {
-  if (activeAudio || !audioQueue.length || typeof Audio === "undefined") {
-    return;
+function playVoice(voice: VoiceSynthesisResult, speed: PlaybackSpeed): Promise<void> {
+  if (typeof Audio === "undefined" || !voice.audio_url) {
+    return Promise.resolve();
   }
 
-  const audio = new Audio(audioQueue.shift());
+  stopAudioPlayback();
+  const audio = new Audio(apiAssetUrl(voice.audio_url));
+  audio.playbackRate = speed;
   activeAudio = audio;
 
-  const complete = () => {
-    if (activeAudio !== audio) {
-      return;
-    }
-    activeAudio = null;
-    void playNextAudio();
-  };
+  return new Promise<void>((resolve) => {
+    activeAudioResolve = resolve;
+    const complete = () => finishActiveAudio();
+    audio.addEventListener("ended", complete, { once: true });
+    audio.addEventListener("error", complete, { once: true });
+    activeAudioTimeout = window.setTimeout(complete, 22000 / speed);
+    void audio.play().catch(complete);
+  });
+}
 
-  audio.addEventListener("ended", complete, { once: true });
-  audio.addEventListener("error", complete, { once: true });
-
-  try {
-    await audio.play();
-  } catch {
-    complete();
+function finishActiveAudio(): void {
+  if (activeAudioTimeout !== null) {
+    window.clearTimeout(activeAudioTimeout);
+    activeAudioTimeout = null;
   }
+  const resolve = activeAudioResolve;
+  activeAudioResolve = null;
+  activeAudio = null;
+  resolve?.();
 }
 
 function stopAudioPlayback(): void {
-  audioQueue = [];
   if (activeAudio) {
     activeAudio.pause();
     activeAudio.src = "";
-    activeAudio = null;
   }
+  finishActiveAudio();
+}
+
+function closeLiveSource(): void {
+  liveSource?.close();
+  liveSource = null;
 }
 
 function createEmptySession(sessionId: string, roleId: string): SimulationRun {
@@ -422,7 +496,7 @@ function createEmptySession(sessionId: string, roleId: string): SimulationRun {
       id: "live-pending",
       title: "Live simulation",
       role_id: roleId,
-      initial_stakes: "Connecting to live scenario playback.",
+      initial_stakes: "Connecting to synchronized scenario playback.",
     },
     turns: [],
     timeline: createEmptyTimeline(sessionId),
@@ -455,11 +529,11 @@ function createEmptyTimeline(sessionId: string): TimelineResponse {
 function createEmptyTurn(turnNumber: number): TurnRecord {
   return {
     turn_number: turnNumber,
-    situation: "Awaiting streamed situation.",
+    situation: "Awaiting synchronized situation update.",
     decision: {
       id: "pending",
-      label: "Pending decision",
-      description: "Awaiting streamed decision.",
+      label: "Decision pending",
+      description: "Awaiting synchronized decision.",
     },
     npc_reactions: [],
     consequence: createEmptyConsequence(),
@@ -491,7 +565,7 @@ function createEmptyReport(sessionId: string): CompetenceReport & { score?: numb
     overall_score: 0,
     score: 0,
     readiness_band: "pending",
-    executive_summary: "Live simulation in progress.",
+    executive_summary: "Synchronized simulation in progress.",
     dimensions: {},
     evidence_trail: [],
     failure_modes: [],
