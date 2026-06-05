@@ -285,6 +285,29 @@ class ManagerReadinessSummary(BaseModel):
     session_count: int
 
 
+class VoiceSynthesisResult(BaseModel):
+    enabled: bool
+    provider: str
+    voice_name: str | None
+    audio_url: str | None
+    format: str | None
+    message: str
+
+
+class VoiceStatusResponse(BaseModel):
+    configured: bool
+    provider: str
+    region_configured: bool
+    voices: dict[str, str]
+
+
+class StreamEventEnvelope(BaseModel):
+    event: str
+    session_id: str
+    sequence: int
+    data: dict
+
+
 class SimulationRunResponse(BaseModel):
     session_id: str
     scenario: dict

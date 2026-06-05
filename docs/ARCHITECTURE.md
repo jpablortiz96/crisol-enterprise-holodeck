@@ -37,8 +37,9 @@ CRISOL models role readiness through a five-agent architecture connected to an o
 9. `app.storage.session_store` saves completed sessions under ignored local JSON storage.
 10. `app.scoring.competence_report` converts sessions into cited readiness reports.
 11. `app.insights.manager` aggregates saved sessions into a no-PII fragility map.
-12. FastAPI endpoints expose health, graph summary, revenue-at-risk, grounding test, scenario run, saved sessions, timeline views, reports, and manager summaries.
-13. Future phases will add live indexing, hosted agents, live ontology sources, and a frontend.
+12. FastAPI endpoints expose health, graph summary, revenue-at-risk, grounding test, scenario run, live scenario stream, saved sessions, timeline views, reports, and manager summaries.
+13. The Next.js War-Room consumes the one-shot scenario endpoint and the live SSE stream.
+14. Future phases will add live indexing, hosted agents, and live ontology sources.
 
 ## Local Orchestration Loop
 
@@ -76,6 +77,50 @@ Phase 5 adds an aggregate readiness view over saved synthetic sessions:
 
 The manager output does not include employee names, emails, learner identity, or PII.
 
+## SSE Event Stream
+
+Phase 7 adds `GET /scenario/stream?role_id=ROLE-SRE` for live War-Room playback:
+
+1. The backend runs the deterministic simulation and saves the session normally.
+2. `app.streaming.sse.build_stream_events` converts the session into ordered event envelopes.
+3. FastAPI returns a `text/event-stream` response through `StreamingResponse`.
+4. The frontend opens an `EventSource` connection from `Play Live Simulation`.
+5. The event rail appends every envelope with its session ID and sequence.
+6. Turn events build the scenario feed progressively.
+7. `consequence_delta` updates severity and revenue metrics.
+8. `timeline_updated` refreshes the ReactFlow decision graph.
+9. `score_final`, `coach_plan`, and `manager_snapshot` hydrate the final assessment panels.
+10. `session_completed` closes the stream and leaves the completed session visible.
+
+The event order is:
+
+- `session_started`
+- `scenario_intro`
+- `turn_started`
+- `decision_selected`
+- `npc_reaction`
+- `consequence_delta`
+- `timeline_updated`
+- `score_final`
+- `coach_plan`
+- `manager_snapshot`
+- `session_completed`
+
+## Azure Speech Voice Layer
+
+Phase 7.2 makes Azure Speech the primary voice layer for streamed NPC reactions:
+
+1. `app.voice.speech` selects a configurable neural voice for each persona.
+2. The backend truncates synthesis input to a safe length and sanitizes all generated path segments.
+3. Azure Speech writes MP3 output under `backend/.crisol_audio/<session_id>/`.
+4. The cache key includes session, event, persona, and line content so repeated playback reuses the same file.
+5. FastAPI serves generated files through the `/audio` static mount.
+6. Each `npc_reaction` event includes a `voice` result with provider, voice name, format, and audio URL.
+7. The frontend queues audio URLs through `HTMLAudioElement` to prevent overlapping NPC speech.
+8. The Voice toggle can stop and clear playback without interrupting the event stream.
+
+The Speech key remains backend-only. If configuration is missing, the provider is `text-only`. If Azure synthesis fails, the provider is `azure-speech-fallback`. Both paths preserve the text reaction and allow the simulation to complete.
+
 ## Phase Boundaries
 
 Phase 1 does not connect to live Azure services, production telemetry, or real employee data. All data is synthetic and local.
@@ -87,3 +132,9 @@ Phase 3 adds local deterministic agent orchestration. It does not require live A
 Phase 4 adds local replay storage under `backend/.crisol_sessions/`. The folder is ignored and should not be committed.
 
 Phase 5 adds product-grade reporting over synthetic saved sessions. Certification alignment is a synthetic readiness signal only, not official certification status.
+
+Phase 6 adds the local War-Room frontend.
+
+Phase 7 adds SSE playback and optional speech fallback.
+
+Phase 7.2 adds Azure Speech synthesis and local MP3 caching. Azure credentials remain optional because text fallback is always available.

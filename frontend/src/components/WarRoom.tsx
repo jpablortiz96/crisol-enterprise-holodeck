@@ -3,10 +3,11 @@
 import { useEffect } from "react";
 import type { ReactNode } from "react";
 import { motion } from "framer-motion";
-import { Activity, Play, Radar, Shield } from "lucide-react";
+import { Activity, Play, Radar, Radio, Shield, Volume2, VolumeX } from "lucide-react";
 import { useWarRoomStore } from "@/store/warRoomStore";
 import { CompetenceGauge } from "@/components/CompetenceGauge";
 import { CompetenceReport } from "@/components/CompetenceReport";
+import { LiveEventRail } from "@/components/LiveEventRail";
 import { ManagerFragilityMap } from "@/components/ManagerFragilityMap";
 import { RevenueTicker } from "@/components/RevenueTicker";
 import { ScenarioFeed } from "@/components/ScenarioFeed";
@@ -21,10 +22,16 @@ export function WarRoom() {
     latestReport,
     fragilityMap,
     readinessSummary,
+    voiceStatus,
+    voiceEnabled,
+    liveEvents,
+    streamStatus,
     isLoading,
     error,
     initialize,
     runSreSimulation,
+    playLiveSimulation,
+    toggleVoice,
   } = useWarRoomStore();
 
   useEffect(() => {
@@ -42,6 +49,7 @@ export function WarRoom() {
       ? activeReport.score
       : activeReport.overall_score
     : 0;
+  const streamBusy = streamStatus === "connecting" || streamStatus === "live";
 
   return (
     <main className="min-h-screen bg-ink px-4 py-5 text-slate-100 md:px-6 xl:px-8">
@@ -52,6 +60,11 @@ export function WarRoom() {
               <StatusPill label={health?.status === "ok" ? "Backend online" : "Backend unavailable"} status={health?.status === "ok" ? "ok" : isLoading ? "loading" : "warn"} />
               <StatusPill label="Synthetic data only" status="ok" />
               <StatusPill label="Grounded simulation" status="ok" />
+              <StatusPill label={`Stream ${streamStatus}`} status={streamStatus === "error" ? "warn" : streamBusy ? "loading" : "ok"} />
+              <StatusPill
+                label={voiceStatus.configured ? "Azure Speech ready" : "Text fallback active"}
+                status={voiceStatus.configured ? "ok" : "warn"}
+              />
             </div>
             <p className="text-xs uppercase tracking-[0.28em] text-slate-500">The Enterprise Holodeck</p>
             <h1 className="mt-1 text-4xl font-semibold tracking-normal text-white md:text-5xl">CRISOL</h1>
@@ -61,11 +74,27 @@ export function WarRoom() {
           <div className="flex flex-col gap-3 sm:flex-row">
             <button
               onClick={() => void runSreSimulation()}
-              disabled={isLoading}
+              disabled={isLoading || streamBusy}
               className="inline-flex items-center justify-center gap-2 rounded-lg bg-signal px-4 py-3 text-sm font-semibold text-ink transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <Play className="h-4 w-4" />
               {isLoading ? "Running..." : "Run SRE Simulation"}
+            </button>
+            <button
+              onClick={playLiveSimulation}
+              disabled={streamBusy}
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-signal/40 bg-signal/10 px-4 py-3 text-sm font-semibold text-emerald-100 transition hover:bg-signal/20 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <Radio className="h-4 w-4" />
+              {streamBusy ? "Streaming..." : "Play Live Simulation"}
+            </button>
+            <button
+              onClick={toggleVoice}
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-600 bg-ink/70 px-4 py-3 text-sm font-semibold text-slate-100 transition hover:border-slate-400 hover:bg-slate-900"
+              aria-pressed={voiceEnabled}
+            >
+              {voiceEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+              Voice: {voiceEnabled ? "On" : "Off"}
             </button>
             <div className="rounded-lg border border-line bg-ink/70 px-4 py-3 text-sm text-slate-300">
               <p className="text-xs uppercase tracking-wide text-slate-500">Readiness summary</p>
@@ -82,7 +111,10 @@ export function WarRoom() {
         transition={{ duration: 0.35 }}
         className="grid gap-5 xl:grid-cols-[380px_minmax(0,1fr)_340px]"
       >
-        <ScenarioFeed turns={session?.turns ?? []} />
+        <div className="space-y-5">
+          <LiveEventRail events={liveEvents} status={streamStatus} />
+          <ScenarioFeed turns={session?.turns ?? []} />
+        </div>
 
         <div className="space-y-5">
           <TimelineGraph timeline={session?.timeline ?? null} />
@@ -100,6 +132,7 @@ export function WarRoom() {
             score={activeScore}
             band={activeReport?.readiness_band}
             topGap={session?.coach_plan.top_gap ?? activeReport?.skill_gaps?.[0]?.skill_id}
+            evidenceCount={activeReport?.evidence_trail.length ?? 0}
             failureModes={activeReport?.failure_modes ?? []}
           />
         </div>

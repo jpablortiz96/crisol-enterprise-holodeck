@@ -5,9 +5,10 @@ import type {
   ReadinessSummary,
   SimulationRun,
   TimelineResponse,
+  VoiceStatusResponse,
 } from "@/lib/types";
 
-const API_BASE = process.env.NEXT_PUBLIC_CRISOL_API_URL || "http://127.0.0.1:8000";
+export const API_BASE = process.env.NEXT_PUBLIC_CRISOL_API_URL || "http://127.0.0.1:8000";
 
 async function request<T>(path: string): Promise<T> {
   const response = await fetch(`${API_BASE}${path}`, {
@@ -25,6 +26,14 @@ async function request<T>(path: string): Promise<T> {
 
 export function runScenario(roleId = "ROLE-SRE"): Promise<SimulationRun> {
   return request<SimulationRun>(`/scenario/run?role_id=${encodeURIComponent(roleId)}`);
+}
+
+export function scenarioStreamUrl(roleId = "ROLE-SRE"): string {
+  return `${API_BASE}/scenario/stream?role_id=${encodeURIComponent(roleId)}`;
+}
+
+export function apiAssetUrl(path: string): string {
+  return new URL(path, `${API_BASE}/`).toString();
 }
 
 export function runTimeline(roleId = "ROLE-SRE"): Promise<TimelineResponse> {
@@ -45,4 +54,8 @@ export function getReadinessSummary(): Promise<ReadinessSummary> {
 
 export function getHealth(): Promise<HealthResponse> {
   return request<HealthResponse>("/health");
+}
+
+export function getVoiceStatus(): Promise<VoiceStatusResponse> {
+  return request<VoiceStatusResponse>("/voice/status");
 }

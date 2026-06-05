@@ -12,11 +12,28 @@ export type HealthResponse = {
   phase: string;
 };
 
+export type VoiceSynthesisResult = {
+  enabled: boolean;
+  provider: string;
+  voice_name: string | null;
+  audio_url: string | null;
+  format: string | null;
+  message: string;
+};
+
+export type VoiceStatusResponse = {
+  configured: boolean;
+  provider: "azure-speech" | "text-only";
+  region_configured: boolean;
+  voices: Record<string, string>;
+};
+
 export type NPCReaction = {
   persona: string;
   tone: string;
   message: string;
   pressure_level: number;
+  voice?: VoiceSynthesisResult;
 };
 
 export type ContractExposure = {
@@ -186,6 +203,28 @@ export type SimulationRun = {
   coach_plan: CoachPlan;
   saved_at?: string;
 };
+
+export type StreamEventName =
+  | "session_started"
+  | "scenario_intro"
+  | "turn_started"
+  | "decision_selected"
+  | "npc_reaction"
+  | "consequence_delta"
+  | "timeline_updated"
+  | "score_final"
+  | "coach_plan"
+  | "manager_snapshot"
+  | "session_completed";
+
+export type StreamEventEnvelope = {
+  event: StreamEventName;
+  session_id: string;
+  sequence: number;
+  data: Record<string, unknown>;
+};
+
+export type StreamStatus = "idle" | "connecting" | "live" | "completed" | "error";
 
 export type ManagerFragilityMap = {
   generated_at: string;

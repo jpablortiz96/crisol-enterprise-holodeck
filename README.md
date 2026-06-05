@@ -11,7 +11,7 @@ CRISOL turns enterprise learning into realistic, measurable practice. It connect
 - How ready is a learner for a target role?
 - Which skills and certifications are missing?
 
-The Phase 1 scaffold is intentionally local and synthetic. Phase 2 adds a local citation-first grounding layer over approved synthetic documents, plus a Foundry IQ adapter skeleton for later live configuration. Phase 3 adds the first deterministic multi-agent simulation loop for terminal demos. Phase 4 adds replay-ready branching timelines and local session storage. Phase 5 adds competence reporting and aggregate manager insights. Phase 6 adds the first browser-based War-Room frontend.
+The Phase 1 scaffold is intentionally local and synthetic. Phase 2 adds a local citation-first grounding layer over approved synthetic documents, plus a Foundry IQ adapter skeleton for later live configuration. Phase 3 adds the first deterministic multi-agent simulation loop for terminal demos. Phase 4 adds replay-ready branching timelines and local session storage. Phase 5 adds competence reporting and aggregate manager insights. Phase 6 adds the first browser-based War-Room frontend. Phase 7 adds live scenario playback over Server-Sent Events and cinematic War-Room updates. Phase 7.2 makes Azure Speech the primary NPC voice layer while retaining a safe text-only fallback.
 
 ## Why It Is Different
 
@@ -34,6 +34,10 @@ The current backend includes:
 - A weighted competence report with cited evidence, skill gaps, certification alignment, and next best actions.
 - A no-PII manager fragility map over saved synthetic sessions.
 - A Next.js War-Room dashboard for running simulations, viewing the timeline, reading reports, and showing manager aggregate risk.
+- A streaming scenario endpoint for live playback in the War-Room.
+- Azure Speech synthesis for NPC reactions when configured.
+- Per-session MP3 caching under ignored local storage at `backend/.crisol_audio/`.
+- A safe text-only fallback when Speech credentials, SDK support, or synthesis are unavailable.
 
 The backend exposes:
 
@@ -42,6 +46,9 @@ The backend exposes:
 - `GET /ontology/revenue-at-risk?systems=SVC-checkout`
 - `GET /grounding/test?q=checkout%20outage%20database%20recovery`
 - `GET /scenario/run?role_id=ROLE-SRE`
+- `GET /scenario/stream?role_id=ROLE-SRE`
+- `GET /voice/status`
+- `GET /voice/test?text=hello&persona=VP%20Operations`
 - `GET /scenario/run/timeline?role_id=ROLE-SRE`
 - `GET /scenario/sessions`
 - `GET /scenario/{session_id}`
@@ -72,6 +79,7 @@ Backend checks:
 ```powershell
 cd backend
 python -m app.validate_phase5
+python -m app.validate_phase7
 python -m app.validate_phase4
 python -m app.run_scenario --role ROLE-SRE
 python -m app.grounding.build_knowledge_base
@@ -103,6 +111,33 @@ Open:
 http://localhost:3000
 ```
 
+The War-Room includes two demo buttons:
+
+- `Run SRE Simulation`
+- `Play Live Simulation`
+
+`Play Live Simulation` connects to `GET /scenario/stream?role_id=ROLE-SRE` and updates the event rail, scenario feed, timeline, consequence metrics, competence score, coach plan, and manager snapshot as events arrive. With Voice enabled, Azure Speech audio is queued so NPC lines do not overlap. Without valid Speech configuration, NPC reactions continue through the text-only fallback.
+
+## Azure Speech
+
+Azure Speech is the primary NPC voice layer. Configure these variables in the local ignored `.env` file or the process environment:
+
+```text
+AZURE_SPEECH_KEY=
+AZURE_SPEECH_REGION=
+```
+
+Persona voices can be overridden with:
+
+```text
+AZURE_SPEECH_VOICE_VP=
+AZURE_SPEECH_VOICE_PM=
+AZURE_SPEECH_VOICE_DB=
+AZURE_SPEECH_VOICE_SUPPORT=
+```
+
+Generated MP3 files are cached per session under `backend/.crisol_audio/`. The directory is ignored and must not be committed. The Speech key is read only by the backend and is never returned to the frontend.
+
 After starting the server, open:
 
 ```text
@@ -111,6 +146,9 @@ http://127.0.0.1:8000/ontology/summary
 http://127.0.0.1:8000/ontology/revenue-at-risk?systems=SVC-checkout
 http://127.0.0.1:8000/grounding/test?q=checkout%20outage%20database%20recovery
 http://127.0.0.1:8000/scenario/run?role_id=ROLE-SRE
+http://127.0.0.1:8000/scenario/stream?role_id=ROLE-SRE
+http://127.0.0.1:8000/voice/status
+http://127.0.0.1:8000/voice/test?text=Checkout%20is%20down%20and%20revenue%20is%20at%20risk&persona=VP%20Operations
 http://127.0.0.1:8000/scenario/run/timeline?role_id=ROLE-SRE
 http://127.0.0.1:8000/scenario/sessions
 http://127.0.0.1:8000/reports/latest
@@ -138,4 +176,7 @@ http://127.0.0.1:8000/manager/readiness-summary
 - [x] Phase 5 manager fragility map.
 - [x] Phase 5 validation script.
 - [x] Phase 6 War-Room frontend.
+- [x] Phase 7 SSE live playback.
+- [x] Phase 7 optional speech fallback.
+- [x] Phase 7.2 Azure Speech synthesis and queued NPC playback.
 - [ ] Live Foundry IQ indexing and retrieval.

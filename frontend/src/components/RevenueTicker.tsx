@@ -1,3 +1,6 @@
+"use client";
+
+import { motion } from "framer-motion";
 import { TrendingDown, TrendingUp } from "lucide-react";
 import { formatCurrency, formatDelta } from "@/lib/format";
 
@@ -14,13 +17,27 @@ export function RevenueTicker({ revenue = 0, delta = 0 }: RevenueTickerProps) {
       <div className="flex items-center justify-between">
         <div>
           <p className="text-xs uppercase tracking-wide text-slate-400">Revenue at risk</p>
-          <p className="mt-1 text-2xl font-semibold text-white">{formatCurrency(revenue)}</p>
+          <motion.p
+            key={revenue}
+            initial={{ opacity: 0.6, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.2 }}
+            className="mt-1 text-2xl font-semibold text-white"
+          >
+            {formatCurrency(revenue)}
+          </motion.p>
         </div>
         {positive ? <TrendingUp className="h-7 w-7 text-danger" /> : <TrendingDown className="h-7 w-7 text-signal" />}
       </div>
-      <p className={`mt-3 text-sm ${positive ? "text-rose-200" : "text-emerald-200"}`}>
-        {formatDelta(delta)} from previous branch
-      </p>
+      <motion.p
+        key={delta}
+        initial={{ opacity: 0.6, y: 4 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.2 }}
+        className={`mt-3 text-sm ${positive ? "text-rose-200" : "text-emerald-200"}`}
+      >
+        Revenue delta {formatDelta(delta)} from previous branch
+      </motion.p>
     </section>
   );
 }

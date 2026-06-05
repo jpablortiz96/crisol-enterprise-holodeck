@@ -27,12 +27,12 @@ export function ManagerFragilityMap({ map }: ManagerFragilityMapProps) {
           <div className="grid gap-4 md:grid-cols-4">
             <Metric label="Average score" value={map.team_readiness.average_score.toFixed(1)} />
             <Metric label="Sessions" value={String(map.session_count)} />
-            <Metric label="Risk dimension" value={titleCase(map.team_readiness.highest_risk_dimension || "none")} />
-            <Metric label="Risk skill" value={map.team_readiness.highest_risk_skill || "None"} />
+            <Metric label="Highest risk dimension" value={titleCase(map.team_readiness.highest_risk_dimension || "none")} />
+            <Metric label="Highest risk skill" value={map.team_readiness.highest_risk_skill || "None available"} />
           </div>
 
           <div className="grid gap-4 lg:grid-cols-3">
-            <Panel title="Role risk">
+            <Panel title="Role risk cards">
               {map.role_risk.slice(0, 4).map((role) => (
                 <div key={role.role_id} className="rounded-md border border-line bg-ink/60 p-3">
                   <div className="flex items-center justify-between">
@@ -72,7 +72,10 @@ export function ManagerFragilityMap({ map }: ManagerFragilityMapProps) {
 
           <div className="flex items-center gap-2 rounded-lg border border-signal/30 bg-signal/10 p-3 text-sm text-emerald-100">
             <ShieldCheck className="h-4 w-4" />
-            {map.privacy_note}
+            <span>
+              <span className="font-semibold">Privacy note: </span>
+              {map.privacy_note}
+            </span>
           </div>
         </div>
       )}

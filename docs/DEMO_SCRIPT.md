@@ -78,24 +78,46 @@
 
 ## Browser War-Room Demo
 
-1. Open War-Room.
+1. Confirm Azure Speech before recording.
+
+   Open:
+
+   ```text
+   http://127.0.0.1:8000/voice/status
+   ```
+
+   Confirm `configured` is `true` and `provider` is `azure-speech`.
+
+2. Open War-Room.
 
    ```text
    http://localhost:3000
    ```
 
-2. Run SRE Simulation.
+3. Play the live scenario.
 
-   Click `Run SRE Simulation`.
+   Click `Play Live Simulation`.
 
-3. Point to the first bad decision cascade.
+4. First 30 seconds.
 
-   Show the restart decision, severity increase, newly affected systems, and revenue-at-risk delta.
+   Show Turn 1 bad restart, `Cascade detected`, `Revenue delta`, and `NPC pressure` as they stream into the War-Room.
 
-4. Show branching timeline.
+   Use this line:
+
+   "The NPC pressure is not just text. It is synthesized through Azure Speech so the simulation feels like a real incident room."
+
+5. Show branching timeline.
 
    Use the center graph to explain root node, decision nodes, and branch labels.
 
-5. Show competence score and manager fragility map.
+6. Final 30 seconds.
 
-   Point to `Competence Score`, the cited competence report, and `Manager Fragility Map`.
+   Show `Competence Score`, the coach plan in the competence report, and `Manager Fragility Map`.
+
+7. Optional fallback callout.
+
+   If speech is not configured, point to `Text fallback active` in the live event rail. The demo should continue without Azure credentials.
+
+8. One-shot fallback path.
+
+   Click `Run SRE Simulation` when you want the full deterministic session to appear at once instead of streamed playback.

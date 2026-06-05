@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import ReactFlow, { Background, Controls, MarkerType, type Edge, type Node } from "reactflow";
 import type { TimelineResponse } from "@/lib/types";
 import { formatCurrency, formatDelta } from "@/lib/format";
@@ -9,41 +10,52 @@ type TimelineGraphProps = {
 };
 
 export function TimelineGraph({ timeline }: TimelineGraphProps) {
-  const nodes: Node[] =
-    timeline?.nodes.map((node, index) => {
-      const isBad = node.revenue_delta > 0 || node.severity >= 5;
-      return {
-        id: node.node_id,
-        position: { x: index * 230, y: index % 2 === 0 ? 60 : 190 },
-        data: {
-          label: (
-            <div className={`min-w-[180px] rounded-lg border p-3 ${isBad ? "border-danger/50 bg-danger/10" : "border-line bg-panel"}`}>
-              <p className="text-[11px] uppercase tracking-wide text-slate-400">
-                {node.turn_number === 0 ? "Root" : `Turn ${node.turn_number}`}
-              </p>
-              <p className="mt-1 text-sm font-semibold text-white">{node.decision_label || "Scenario start"}</p>
-              <div className="mt-2 grid grid-cols-2 gap-2 text-[11px] text-slate-300">
-                <span>Severity {node.severity}</span>
-                <span>{formatDelta(node.revenue_delta)}</span>
+  const nodes = useMemo<Node[]>(
+    () =>
+      timeline?.nodes.map((node, index) => {
+        const isBad = node.revenue_delta > 0 || node.severity >= 5;
+        return {
+          id: node.node_id,
+          position: { x: index * 230, y: index % 2 === 0 ? 60 : 190 },
+          data: {
+            label: (
+              <div className={`min-w-[180px] rounded-lg border p-3 ${isBad ? "border-danger/50 bg-danger/10" : "border-line bg-panel"}`}>
+                <p className="text-[11px] uppercase tracking-wide text-slate-400">
+                  {node.turn_number === 0 ? "Root" : `Turn ${node.turn_number}`}
+                </p>
+                <p className="mt-1 text-sm font-semibold text-white">{node.decision_label || "Scenario start"}</p>
+                {isBad && (
+                  <p className="mt-2 rounded-full border border-danger/40 bg-danger/10 px-2 py-0.5 text-[11px] text-rose-100">
+                    Cascade detected
+                  </p>
+                )}
+                <div className="mt-2 grid grid-cols-2 gap-2 text-[11px] text-slate-300">
+                  <span>Severity {node.severity}</span>
+                  <span>Revenue delta {formatDelta(node.revenue_delta)}</span>
+                </div>
+                <p className="mt-2 text-[11px] text-slate-400">{formatCurrency(node.revenue_at_risk)}</p>
               </div>
-              <p className="mt-2 text-[11px] text-slate-400">{formatCurrency(node.revenue_at_risk)}</p>
-            </div>
-          ),
-        },
-        type: "default",
-      };
-    }) ?? [];
+            ),
+          },
+          type: "default",
+        };
+      }) ?? [],
+    [timeline],
+  );
 
-  const edges: Edge[] =
-    timeline?.edges.map((edge) => ({
-      id: `${edge.from}-${edge.to}`,
-      source: edge.from,
-      target: edge.to,
-      label: edge.label,
-      markerEnd: { type: MarkerType.ArrowClosed },
-      style: { stroke: "#64748b" },
-      labelStyle: { fill: "#cbd5e1", fontSize: 11 },
-    })) ?? [];
+  const edges = useMemo<Edge[]>(
+    () =>
+      timeline?.edges.map((edge) => ({
+        id: `${edge.from}-${edge.to}`,
+        source: edge.from,
+        target: edge.to,
+        label: edge.label,
+        markerEnd: { type: MarkerType.ArrowClosed },
+        style: { stroke: "#64748b" },
+        labelStyle: { fill: "#cbd5e1", fontSize: 11 },
+      })) ?? [],
+    [timeline],
+  );
 
   return (
     <section className="min-h-[420px] rounded-lg border border-line bg-panel/80 p-4 shadow-soft-border">

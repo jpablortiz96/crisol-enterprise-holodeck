@@ -1,5 +1,9 @@
+import os
+
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.grounding.foundry_iq import grounded_answer
 from app.insights.manager import build_fragility_map
@@ -17,8 +21,17 @@ from app.schemas import (
     SavedSessionSummary,
     SimulationRunResponse,
     TimelineResponse,
+    VoiceStatusResponse,
+    VoiceSynthesisResult,
 )
+from app.streaming.sse import scenario_event_stream
 from app.storage.session_store import list_sessions, load_session
+from app.voice.speech import (
+    AUDIO_ROOT,
+    configured_voices,
+    is_speech_configured,
+    synthesize_npc_line,
+)
 
 
 app = FastAPI(title="CRISOL Backend", version="0.1.0")
@@ -29,6 +42,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+AUDIO_ROOT.mkdir(parents=True, exist_ok=True)
+app.mount("/audio", StaticFiles(directory=AUDIO_ROOT), name="audio")
 _GRAPH = load_ontology()
 
 
@@ -73,6 +88,39 @@ def grounding_test(q: str = Query(..., min_length=1)) -> dict:
 @app.get("/scenario/run", response_model=SimulationRunResponse)
 def scenario_run(role_id: str = Query(default="ROLE-SRE")) -> dict:
     return run_simulation(role_id=role_id, auto_mode=True)
+
+
+@app.get("/scenario/stream")
+def scenario_stream(role_id: str = Query(default="ROLE-SRE")) -> StreamingResponse:
+    return StreamingResponse(
+        scenario_event_stream(role_id=role_id),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "Connection": "keep-alive"},
+    )
+
+
+@app.get("/voice/status", response_model=VoiceStatusResponse)
+def voice_status() -> dict:
+    configured = is_speech_configured()
+    return {
+        "configured": configured,
+        "provider": "azure-speech" if configured else "text-only",
+        "region_configured": bool(os.getenv("AZURE_SPEECH_REGION")),
+        "voices": configured_voices(),
+    }
+
+
+@app.get("/voice/test", response_model=VoiceSynthesisResult)
+def voice_test(
+    text: str = Query(default="hello", min_length=1, max_length=450),
+    persona: str = Query(default="VP Operations", min_length=1, max_length=80),
+) -> dict:
+    return synthesize_npc_line(
+        text,
+        persona,
+        session_id="SES-VOICE-TEST",
+        event_id="EVT-VOICE-TEST",
+    )
 
 
 @app.get("/scenario/run/timeline", response_model=TimelineResponse)

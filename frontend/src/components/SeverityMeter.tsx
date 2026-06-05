@@ -1,3 +1,6 @@
+"use client";
+
+import { motion } from "framer-motion";
 import { ShieldAlert } from "lucide-react";
 
 type SeverityMeterProps = {
@@ -13,12 +16,24 @@ export function SeverityMeter({ severity = 0, maxSeverity = 0 }: SeverityMeterPr
       <div className="flex items-center justify-between">
         <div>
           <p className="text-xs uppercase tracking-wide text-slate-400">Severity</p>
-          <p className="mt-1 text-2xl font-semibold text-white">{severity || "-"}/5</p>
+          <motion.p
+            key={severity}
+            initial={{ opacity: 0.6, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.2 }}
+            className="mt-1 text-2xl font-semibold text-white"
+          >
+            {severity || "-"}/5
+          </motion.p>
         </div>
         <ShieldAlert className="h-7 w-7 text-caution" />
       </div>
       <div className="mt-4 h-2 rounded-full bg-slate-800">
-        <div className="h-2 rounded-full bg-caution" style={{ width: `${percentage}%` }} />
+        <motion.div
+          className="h-2 rounded-full bg-caution"
+          animate={{ width: `${percentage}%` }}
+          transition={{ duration: 0.25 }}
+        />
       </div>
       <p className="mt-3 text-xs text-slate-400">Peak severity: {maxSeverity || "-"}</p>
     </section>

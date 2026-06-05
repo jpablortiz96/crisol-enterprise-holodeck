@@ -1,3 +1,6 @@
+"use client";
+
+import { motion } from "framer-motion";
 import { Gauge } from "lucide-react";
 import { bandLabel } from "@/lib/format";
 
@@ -5,10 +8,11 @@ type CompetenceGaugeProps = {
   score?: number;
   band?: string;
   topGap?: string;
+  evidenceCount?: number;
   failureModes?: Array<{ mode_id: string; description: string }>;
 };
 
-export function CompetenceGauge({ score = 0, band, topGap, failureModes = [] }: CompetenceGaugeProps) {
+export function CompetenceGauge({ score = 0, band, topGap, evidenceCount = 0, failureModes = [] }: CompetenceGaugeProps) {
   const stroke = Math.min(100, Math.max(0, score));
 
   return (
@@ -16,14 +20,26 @@ export function CompetenceGauge({ score = 0, band, topGap, failureModes = [] }: 
       <div className="flex items-center justify-between">
         <div>
           <p className="text-xs uppercase tracking-wide text-slate-400">Competence Score</p>
-          <p className="mt-1 text-3xl font-semibold text-white">{score ? score.toFixed(1) : "--"}</p>
+          <motion.p
+            key={score}
+            initial={{ opacity: 0.6, scale: 0.96 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.22 }}
+            className="mt-1 text-3xl font-semibold text-white"
+          >
+            {score ? score.toFixed(1) : "--"}
+          </motion.p>
         </div>
         <Gauge className="h-7 w-7 text-signal" />
       </div>
       <div className="mt-4 h-2 rounded-full bg-slate-800">
-        <div className="h-2 rounded-full bg-signal" style={{ width: `${stroke}%` }} />
+        <motion.div
+          className="h-2 rounded-full bg-signal"
+          animate={{ width: `${stroke}%` }}
+          transition={{ duration: 0.3 }}
+        />
       </div>
-      <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+      <div className="mt-4 grid grid-cols-3 gap-3 text-sm">
         <div>
           <p className="text-xs uppercase tracking-wide text-slate-500">Band</p>
           <p className="font-medium text-slate-100">{bandLabel(band)}</p>
@@ -31,6 +47,10 @@ export function CompetenceGauge({ score = 0, band, topGap, failureModes = [] }: 
         <div>
           <p className="text-xs uppercase tracking-wide text-slate-500">Top gap</p>
           <p className="font-medium text-slate-100">{topGap || "No run yet"}</p>
+        </div>
+        <div>
+          <p className="text-xs uppercase tracking-wide text-slate-500">Cited evidence</p>
+          <p className="font-medium text-slate-100">{evidenceCount}</p>
         </div>
       </div>
       <div className="mt-4">
