@@ -1,5 +1,6 @@
 import asyncio
 import json
+import logging
 import os
 from datetime import timedelta
 from functools import lru_cache
@@ -36,10 +37,15 @@ def search_learn_docs(query: str, top_k: int = 3) -> dict[str, Any]:
     else:
         return _local_fallback(normalized_query, top_k)
 
+    transport_logger = logging.getLogger("mcp.client.streamable_http")
+    previous_level = transport_logger.level
     try:
+        transport_logger.setLevel(logging.CRITICAL)
         return asyncio.run(_search_live(normalized_query, top_k))
     except Exception:
         return _local_fallback(normalized_query, top_k)
+    finally:
+        transport_logger.setLevel(previous_level)
 
 
 @lru_cache(maxsize=16)

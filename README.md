@@ -11,7 +11,7 @@ CRISOL turns enterprise learning into realistic, measurable practice. It connect
 - How ready is a learner for a target role?
 - Which skills and certifications are missing?
 
-The Phase 1 scaffold is intentionally local and synthetic. Phase 2 adds a local citation-first grounding layer over approved synthetic documents, plus a Foundry IQ adapter skeleton for later live configuration. Phase 3 adds the first deterministic multi-agent simulation loop for terminal demos. Phase 4 adds replay-ready branching timelines and local session storage. Phase 5 adds competence reporting and aggregate manager insights. Phase 6 adds the first browser-based War-Room frontend. Phase 7 adds live scenario playback over Server-Sent Events and cinematic War-Room updates. Phase 7.2 makes Azure Speech the primary NPC voice layer while retaining a safe text-only fallback. Phase 7.3 adds synchronized playback direction, replay controls, playback speed, and animated NPC presence. Phase 7.4 adds bounded panel layouts and deterministic Dagre positioning for the decision graph. Phase 8 exposes CRISOL through MCP tools, adds Microsoft Learn MCP grounding with a safe fallback, and introduces time-travel branch comparison.
+The platform now includes a sanitized Scenario Library, deterministic simulation and replay, cited competence reporting, manager insights, MCP tools, Microsoft Learn grounding, Azure Speech with text fallback, structured local telemetry, an evaluation harness, and deployment artifacts.
 
 ## Why It Is Different
 
@@ -44,6 +44,10 @@ The current backend includes:
 - A six-tool CRISOL MCP server backed by the same simulation, replay, reporting, and manager services.
 - A Microsoft Learn MCP adapter with bounded timeouts and synthetic local fallback.
 - Deterministic time-travel replay projections from saved decision nodes.
+- A five-pack Scenario Library with import and sensitive-content validation.
+- Evaluation checks for groundedness, citations, safety, tools, replay, voice fallback, and product language.
+- Structured local telemetry under ignored storage.
+- A production backend container and operational deployment guidance.
 
 The backend exposes:
 
@@ -68,6 +72,37 @@ The backend exposes:
 - `POST /replay/branch-from`
 - `GET /grounding/learn/test?q=AZ-400%20monitoring%20CI/CD`
 - `GET /grounding/learn/certification/{certification_id}`
+- `GET /scenarios`
+- `GET /scenarios/{scenario_id}`
+- `POST /scenarios/validate`
+- `POST /scenario/run-custom`
+- `GET /scenario/stream-custom`
+- `GET /eval/report`
+- `GET /telemetry/summary`
+- `GET /telemetry/events`
+
+## Scenario Library
+
+Scenario packs are manually authored, sanitized JSON under `backend/app/data/scenario_packs`. They can be validated and selected without editing runtime code:
+
+```powershell
+cd backend
+python -m app.scenarios.importer
+python -m app.validate_phase9
+```
+
+The War-Room Scenario Library drives both one-shot and live simulation controls. See `docs/PRODUCT_SCENARIOS.md` for the authoring contract.
+
+## Evaluation And Telemetry
+
+Run the product-readiness evaluation:
+
+```powershell
+cd backend
+python -m app.eval.harness
+```
+
+Lifecycle telemetry is written as allowlisted JSON lines under ignored `backend/.crisol_telemetry/`. It stores operational identifiers and metrics, not secrets, PII, or long raw inputs.
 
 ## CRISOL MCP Server
 
@@ -114,6 +149,9 @@ Backend checks:
 
 ```powershell
 cd backend
+python -m app.scenarios.importer
+python -m app.eval.harness
+python -m app.validate_phase9
 python -m app.validate_phase8
 python -m app.validate_phase5
 python -m app.validate_phase7
@@ -159,6 +197,8 @@ The War-Room includes:
 - `0.75x`, `1x`, and `1.25x` speed controls
 - `Time-Travel Replay`
 - `CRISOL MCP Server`
+- `Scenario Library`
+- `Product Readiness`
 
 `Play Live Simulation` connects to `GET /scenario/stream?role_id=ROLE-SRE`. Stream intake and visible playback are separated: events can buffer immediately while the Playback Director advances the Event Rail, NPC stage, timeline, consequence metrics, competence score, coach plan, and manager snapshot in sequence. NPC reactions block progression until Azure Speech audio ends or reaches a safety timeout. Without valid Speech configuration, the same synchronized pacing uses the text-only fallback.
 
@@ -235,4 +275,9 @@ http://127.0.0.1:8000/grounding/learn/certification/AZ-400
 - [x] Phase 8 Microsoft Learn MCP adapter with safe local fallback.
 - [x] Phase 8 deterministic time-travel replay projection.
 - [x] Phase 8 replay and MCP War-Room panels.
+- [x] Phase 9 sanitized Scenario Library and custom streaming.
+- [x] Phase 9 evaluation, safety, groundedness, and citation harness.
+- [x] Phase 9 structured local telemetry and optional tracing.
+- [x] Phase 9 product language and operational boundary polish.
+- [x] Phase 9 Docker and production readiness documentation.
 - [ ] Live Foundry IQ indexing and retrieval.

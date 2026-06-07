@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from dotenv import load_dotenv
+from app.telemetry.events import emit_event
 
 
 AUDIO_ROOT = Path(__file__).resolve().parents[2] / ".crisol_audio"
@@ -45,12 +46,12 @@ def synthesize_npc_line(
     event_id: str | None = None,
 ) -> dict[str, Any]:
     if not is_speech_configured():
-        return _text_fallback()
+        return _record_voice_result(_text_fallback(), session_id)
 
     voice_name = voice_for_persona(persona)
     safe_text = " ".join(text.split())[:MAX_SPEECH_TEXT_LENGTH]
     if not safe_text:
-        return _azure_fallback(voice_name)
+        return _record_voice_result(_azure_fallback(voice_name), session_id)
 
     safe_session_id = sanitize_audio_filename(session_id or "voice-preview")
     safe_event_id = sanitize_audio_filename(event_id or "event")
@@ -63,12 +64,12 @@ def synthesize_npc_line(
     audio_url = f"/audio/{safe_session_id}/{filename}"
 
     if output_path.is_file() and output_path.stat().st_size > 0:
-        return _success_result(voice_name, audio_url)
+        return _record_voice_result(_success_result(voice_name, audio_url), session_id)
 
     try:
         import azure.cognitiveservices.speech as speechsdk
     except ImportError:
-        return _azure_fallback(voice_name)
+        return _record_voice_result(_azure_fallback(voice_name), session_id)
 
     output_directory.mkdir(parents=True, exist_ok=True)
 
@@ -101,7 +102,7 @@ def synthesize_npc_line(
             and output_path.is_file()
             and output_path.stat().st_size > 0
         ):
-            return _success_result(voice_name, audio_url)
+            return _record_voice_result(_success_result(voice_name, audio_url), session_id)
     except Exception:
         pass
     finally:
@@ -114,7 +115,7 @@ def synthesize_npc_line(
         output_path.unlink(missing_ok=True)
     except OSError:
         pass
-    return _azure_fallback(voice_name)
+    return _record_voice_result(_azure_fallback(voice_name), session_id)
 
 
 def configured_voices() -> dict[str, str]:
@@ -152,3 +153,19 @@ def _azure_fallback(voice_name: str) -> dict[str, Any]:
         "format": None,
         "message": "Azure Speech synthesis failed; using text fallback.",
     }
+
+
+def _record_voice_result(
+    result: dict[str, Any],
+    session_id: str | None,
+) -> dict[str, Any]:
+    emit_event(
+        "voice_synthesized" if result["provider"] == "azure-speech" else "voice_fallback",
+        {
+            "session_id": session_id,
+            "provider": result["provider"],
+            "voice_enabled": result["enabled"],
+            "status": "completed" if result["enabled"] else "fallback",
+        },
+    )
+    return result

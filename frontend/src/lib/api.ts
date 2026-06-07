@@ -6,7 +6,9 @@ import type {
   McpToolsResponse,
   ReadinessSummary,
   ReplayBranchResult,
+  ScenarioSummary,
   SimulationRun,
+  TelemetrySummary,
   TimelineResponse,
   VoiceStatusResponse,
 } from "@/lib/types";
@@ -32,6 +34,26 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 
 export function runScenario(roleId = "ROLE-SRE"): Promise<SimulationRun> {
   return request<SimulationRun>(`/scenario/run?role_id=${encodeURIComponent(roleId)}`);
+}
+
+export function getScenarios(): Promise<ScenarioSummary[]> {
+  return request<ScenarioSummary[]>("/scenarios");
+}
+
+export function getScenario(id: string): Promise<Record<string, unknown>> {
+  return request<Record<string, unknown>>(`/scenarios/${encodeURIComponent(id)}`);
+}
+
+export function runCustomScenario(id: string, roleId: string): Promise<SimulationRun> {
+  return request<SimulationRun>("/scenario/run-custom", {
+    method: "POST",
+    body: JSON.stringify({ scenario_id: id, role_id: roleId }),
+  });
+}
+
+export function streamCustomScenarioUrl(id: string, roleId: string): string {
+  const parameters = new URLSearchParams({ scenario_id: id, role_id: roleId });
+  return `${API_BASE}/scenario/stream-custom?${parameters.toString()}`;
 }
 
 export function scenarioStreamUrl(roleId = "ROLE-SRE"): string {
@@ -64,6 +86,10 @@ export function getHealth(): Promise<HealthResponse> {
 
 export function getVoiceStatus(): Promise<VoiceStatusResponse> {
   return request<VoiceStatusResponse>("/voice/status");
+}
+
+export function getTelemetrySummary(): Promise<TelemetrySummary> {
+  return request<TelemetrySummary>("/telemetry/summary");
 }
 
 export function getMcpTools(): Promise<McpToolsResponse> {

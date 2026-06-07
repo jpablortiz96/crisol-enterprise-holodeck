@@ -1,21 +1,25 @@
 import os
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import Body, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.grounding.foundry_iq import grounded_answer
 from app.grounding.learn_mcp import certification_context, search_learn_docs
+from app.eval.harness import run_eval_suite
 from app.insights.manager import build_fragility_map
 from app.mcp_server.tools import list_registered_tools, run_local_demo
 from app.ontology.graph import affected_systems, load_ontology, revenue_at_risk, summarize_graph
 from app.orchestration.turn_loop import run_simulation
 from app.replay.time_travel import branch_from_session
+from app.scenarios.library import get_scenario, list_scenarios
+from app.scenarios.validators import validate_no_sensitive_content, validate_scenario_pack
 from app.scoring.competence_report import generate_competence_report
 from app.schemas import (
     BranchFromRequest,
     CompetenceReport,
+    CustomScenarioRunRequest,
     GroundingTestResponse,
     HealthResponse,
     ManagerFragilityMap,
@@ -30,6 +34,8 @@ from app.schemas import (
 )
 from app.streaming.sse import scenario_event_stream
 from app.storage.session_store import list_sessions, load_session
+from app.telemetry.events import list_recent_events, telemetry_summary
+from app.telemetry.tracing import initialize_tracing
 from app.voice.speech import (
     AUDIO_ROOT,
     configured_voices,
@@ -38,7 +44,7 @@ from app.voice.speech import (
 )
 
 
-app = FastAPI(title="CRISOL Backend", version="0.8.0")
+app = FastAPI(title="CRISOL Backend", version="0.9.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
@@ -49,6 +55,7 @@ app.add_middleware(
 AUDIO_ROOT.mkdir(parents=True, exist_ok=True)
 app.mount("/audio", StaticFiles(directory=AUDIO_ROOT), name="audio")
 _GRAPH = load_ontology()
+initialize_tracing()
 
 
 @app.get("/health", response_model=HealthResponse)
@@ -56,7 +63,7 @@ def health() -> dict[str, str]:
     return {
         "status": "ok",
         "service": "crisol-backend",
-        "phase": "8-wow-layer",
+        "phase": "9-product-platform",
     }
 
 
@@ -110,6 +117,86 @@ def mcp_tools() -> dict:
 @app.post("/mcp/demo")
 def mcp_demo() -> dict:
     return run_local_demo()
+
+
+@app.get("/scenarios")
+def scenarios() -> list[dict]:
+    return list_scenarios()
+
+
+@app.post("/scenarios/validate")
+def scenarios_validate(pack: dict = Body(...)) -> dict:
+    structural_errors = validate_scenario_pack(pack)
+    safety_errors = validate_no_sensitive_content(pack)
+    errors = [*structural_errors, *safety_errors]
+    return {
+        "valid": not errors,
+        "scenario_id": pack.get("scenario_id"),
+        "errors": errors,
+        "structural_errors": structural_errors,
+        "safety_errors": safety_errors,
+    }
+
+
+@app.get("/scenarios/{scenario_id}")
+def scenario_pack(scenario_id: str) -> dict:
+    try:
+        return get_scenario(scenario_id)
+    except FileNotFoundError as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+
+
+@app.post("/scenario/run-custom", response_model=SimulationRunResponse)
+def scenario_run_custom(request: CustomScenarioRunRequest) -> dict:
+    try:
+        pack = get_scenario(request.scenario_id)
+        role_id = request.role_id or pack["role_id"]
+        return run_simulation(
+            role_id=role_id,
+            scenario_seed=request.scenario_id,
+            auto_mode=True,
+        )
+    except FileNotFoundError as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+
+
+@app.get("/scenario/stream-custom")
+def scenario_stream_custom(
+    scenario_id: str = Query(..., min_length=1),
+    role_id: str | None = Query(default=None),
+) -> StreamingResponse:
+    try:
+        pack = get_scenario(scenario_id)
+    except FileNotFoundError as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+    selected_role = role_id or pack["role_id"]
+    if selected_role != pack["role_id"]:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Scenario {scenario_id} is assigned to {pack['role_id']}, not {selected_role}.",
+        )
+    return StreamingResponse(
+        scenario_event_stream(role_id=selected_role, scenario_id=scenario_id),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "Connection": "keep-alive"},
+    )
+
+
+@app.get("/eval/report")
+def evaluation_report() -> dict:
+    return run_eval_suite()
+
+
+@app.get("/telemetry/summary")
+def telemetry_summary_endpoint() -> dict:
+    return telemetry_summary()
+
+
+@app.get("/telemetry/events")
+def telemetry_events(limit: int = Query(default=50, ge=1, le=500)) -> list[dict]:
+    return list_recent_events(limit=limit)
 
 
 @app.post("/replay/branch-from")

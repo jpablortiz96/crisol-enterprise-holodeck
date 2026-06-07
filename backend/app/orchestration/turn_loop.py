@@ -10,6 +10,7 @@ from app.branching.timeline import build_timeline, create_decision_node, create_
 from app.ontology.graph import load_ontology
 from app.ontology.graph import revenue_at_risk
 from app.storage.session_store import save_session
+from app.telemetry.events import emit_event
 
 
 def run_simulation(
@@ -23,7 +24,16 @@ def run_simulation(
     state["session_id"] = f"{state['session_id']}-{_session_timestamp()}"
     state["revenue_at_risk"] = revenue_at_risk(graph, state["impacted_systems"])
     state["current_branch_id"] = "BR-ROOT"
-    state["cascade_roots"] = ["SVC-checkout"]
+    state["cascade_roots"] = list(state["impacted_systems"][:1])
+    emit_event(
+        "scenario_started",
+        {
+            "session_id": state["session_id"],
+            "scenario_id": state["scenario"]["id"],
+            "role_id": role_id,
+            "status": "started",
+        },
+    )
     root_scenario = {
         **state["scenario"],
         "initial_severity": state["severity"],
@@ -57,6 +67,30 @@ def run_simulation(
             "citations": [*turn_context["citations"], *consequence["citations"]],
         }
         turns.append(turn_record)
+        emit_event(
+            "consequence_evaluated",
+            {
+                "session_id": state["session_id"],
+                "scenario_id": state["scenario"]["id"],
+                "role_id": role_id,
+                "turn_number": turn_context["turn_number"],
+                "severity": consequence["new_severity"],
+                "severity_delta": consequence["severity_delta"],
+                "revenue_at_risk": consequence["revenue_at_risk"],
+                "revenue_delta": consequence["revenue_delta"],
+                "citation_count": len(turn_record["citations"]),
+            },
+        )
+        emit_event(
+            "turn_processed",
+            {
+                "session_id": state["session_id"],
+                "scenario_id": state["scenario"]["id"],
+                "role_id": role_id,
+                "turn_number": turn_context["turn_number"],
+                "status": "completed",
+            },
+        )
         state["history"].append(turn_record)
         state["turn_index"] += 1
         state["severity"] = consequence["new_severity"]
@@ -71,6 +105,17 @@ def run_simulation(
         "timeline": build_timeline(timeline_nodes),
     }
     final_score = score_session(session)
+    emit_event(
+        "score_generated",
+        {
+            "session_id": state["session_id"],
+            "scenario_id": state["scenario"]["id"],
+            "role_id": role_id,
+            "score": final_score["score"],
+            "readiness_band": final_score["readiness_band"],
+            "citation_count": len(final_score["citations"]),
+        },
+    )
     coach_plan = generate_coach_plan(final_score, session)
 
     completed_session = {

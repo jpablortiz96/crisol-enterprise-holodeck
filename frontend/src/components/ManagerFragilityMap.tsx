@@ -12,7 +12,7 @@ export function ManagerFragilityMap({ map }: ManagerFragilityMapProps) {
     <section className="war-panel report-panel p-5">
       <div className="panel-header !mb-0 !p-0">
         <div>
-          <p className="panel-kicker">Synthetic data only</p>
+          <p className="panel-kicker">Sanitized training data</p>
           <h2 className="panel-title">Manager Fragility Map</h2>
         </div>
         <Network className="h-5 w-5 text-amber-300" />

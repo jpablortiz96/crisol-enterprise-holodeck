@@ -1,0 +1,68 @@
+{
+  "scenario_id": "SCN-DATA-001",
+  "title": "Executive reporting pipeline recovery",
+  "industry": "Enterprise analytics",
+  "role_id": "ROLE-DATA",
+  "difficulty": "standard",
+  "estimated_minutes": 8,
+  "data_classification": "sanitized-training",
+  "business_context": "A fictional executive reporting cycle is approaching while freshness checks show delayed data and incomplete partitions.",
+  "systems": ["SVC-data-pipeline", "SVC-db", "SVC-observability"],
+  "initial_stakes": "Executive metrics are stale, downstream decisions may use incomplete data, and a controlled recovery is required.",
+  "personas": [
+    {"persona": "Data Lead", "role": "Pipeline recovery owner", "communication_style": "technical", "pressure_profile": "high"},
+    {"persona": "Product Manager", "role": "Reporting stakeholder", "communication_style": "focused", "pressure_profile": "medium"},
+    {"persona": "VP Operations", "role": "Executive consumer", "communication_style": "urgent", "pressure_profile": "medium"}
+  ],
+  "turns": [
+    {
+      "turn_id": "T1",
+      "situation": "Freshness alerts show a four-hour lag and one source partition has stopped advancing.",
+      "options": [
+        {"id": "OPT-DATA-1A", "label": "Correlate offsets, quality checks, and dependency health", "description": "Identify the failed boundary before changing pipeline state.", "action_type": "correlate_observability", "competencies": ["SK-data-engineering", "SK-observability"], "risk_effect": "decrease", "expected_outcome": "The failed partition and affected reports are isolated."},
+        {"id": "OPT-DATA-1B", "label": "Start a full historical backfill", "description": "Reprocess all data before isolating the fault.", "action_type": "custom_data_full_backfill", "competencies": ["SK-data-engineering"], "risk_effect": "increase", "expected_outcome": "Compute load and recovery uncertainty increase."}
+      ],
+      "evaluation_focus": ["SK-data-engineering", "SK-observability"]
+    },
+    {
+      "turn_id": "T2",
+      "situation": "The failed partition is identified and downstream tables contain mixed freshness.",
+      "options": [
+        {"id": "OPT-DATA-2A", "label": "Freeze report publication and validate source state", "description": "Prevent incomplete metrics from reaching decision makers.", "action_type": "freeze_db_writes", "competencies": ["SK-data-engineering", "SK-database-recovery"], "risk_effect": "decrease", "expected_outcome": "Reporting confidence is protected during recovery."},
+        {"id": "OPT-DATA-2B", "label": "Publish available partial metrics", "description": "Release mixed-freshness reports without confidence labels.", "action_type": "custom_data_publish_partial", "competencies": ["SK-communication"], "risk_effect": "increase", "expected_outcome": "Decision makers may act on inconsistent metrics."}
+      ],
+      "evaluation_focus": ["SK-data-engineering", "SK-database-recovery"]
+    },
+    {
+      "turn_id": "T3",
+      "situation": "The recovery owner needs approval to replay the isolated partition.",
+      "options": [
+        {"id": "OPT-DATA-3A", "label": "Escalate recovery plan with validation checkpoints", "description": "Assign owners for replay, quality, and stakeholder updates.", "action_type": "escalate_incident_command", "competencies": ["SK-communication", "SK-escalation-judgment"], "risk_effect": "decrease", "expected_outcome": "Recovery proceeds with accountable quality gates."},
+        {"id": "OPT-DATA-3B", "label": "Replay the partition without a checkpoint", "description": "Start recovery without named quality ownership.", "action_type": "custom_data_replay_unchecked", "competencies": ["SK-data-engineering"], "risk_effect": "neutral", "expected_outcome": "Data moves, but release confidence remains uncertain."}
+      ],
+      "evaluation_focus": ["SK-communication", "SK-escalation-judgment"]
+    },
+    {
+      "turn_id": "T4",
+      "situation": "The isolated replay completes and quality checks must confirm downstream consistency.",
+      "options": [
+        {"id": "OPT-DATA-4A", "label": "Compare row counts, freshness, and reconciliation controls", "description": "Validate recovery across source and reporting layers.", "action_type": "custom_data_validate", "competencies": ["SK-data-engineering", "SK-observability"], "risk_effect": "decrease", "expected_outcome": "The team confirms that reporting data is internally consistent."},
+        {"id": "OPT-DATA-4B", "label": "Accept the first successful pipeline run", "description": "Treat completion as sufficient validation.", "action_type": "custom_data_accept_first_run", "competencies": ["SK-data-engineering"], "risk_effect": "increase", "expected_outcome": "Undetected quality defects may reach executive reports."}
+      ],
+      "evaluation_focus": ["SK-data-engineering", "SK-observability"]
+    },
+    {
+      "turn_id": "T5",
+      "situation": "Quality gates pass and the reporting service can return to normal publication.",
+      "options": [
+        {"id": "OPT-DATA-5A", "label": "Restore reporting gradually with confidence notes", "description": "Release validated reports and monitor freshness checkpoints.", "action_type": "gradual_restore", "competencies": ["SK-data-engineering", "SK-communication"], "risk_effect": "decrease", "expected_outcome": "Reporting resumes with transparent confidence and monitoring."},
+        {"id": "OPT-DATA-5B", "label": "Publish every delayed report at once", "description": "Release all outputs without a monitored transition.", "action_type": "custom_data_publish_all", "competencies": ["SK-data-engineering"], "risk_effect": "increase", "expected_outcome": "A second quality issue would affect all reporting consumers."}
+      ],
+      "evaluation_focus": ["SK-data-engineering", "SK-communication"]
+    }
+  ],
+  "success_criteria": ["Protect reporting confidence", "Isolate the failed partition", "Validate quality before publication", "Communicate freshness clearly"],
+  "failure_modes": ["Full backfill before isolation", "Publish mixed-freshness metrics", "Restore without quality gates"],
+  "knowledge_refs": ["RUNBOOK-DB-RECOVERY", "MANAGER-READINESS-RUBRIC"],
+  "tags": ["data-platform", "pipeline-recovery", "reporting", "quality-controls"]
+}

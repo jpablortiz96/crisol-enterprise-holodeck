@@ -42,7 +42,10 @@ CRISOL models role readiness through a five-agent architecture connected to an o
 14. `app.mcp_server` exposes six CRISOL capabilities through a local registry and `FastMCP`.
 15. FastAPI endpoints expose health, graph summary, revenue-at-risk, grounding tests, scenario run, live scenario stream, saved sessions, replay, MCP tools, reports, and manager summaries.
 16. The Next.js War-Room consumes the one-shot scenario endpoint, live SSE stream, replay endpoint, and MCP demo endpoint.
-17. Future phases will add live indexing, hosted agents, and live ontology sources.
+17. `app.scenarios` validates, imports, selects, and normalizes manual scenario packs.
+18. `app.telemetry` records allowlisted local lifecycle events and optionally initializes OpenTelemetry.
+19. `app.eval` verifies groundedness, citation integrity, scenario safety, tools, replay, voice fallback, and product language.
+20. Future phases will add live indexing, hosted agents, and live ontology sources.
 
 ## Local Orchestration Loop
 
@@ -91,6 +94,30 @@ MCP client or War-Room
 The MCP registry and HTTP endpoints call the same underlying services. The replay layer copies the pre-branch timeline, replaces the selected decision, simulates the remaining path deterministically, and saves a new session. It is a deterministic replay projection, not an exact production rollback.
 
 The Learn adapter uses streamable HTTP with a bounded timeout. Live results are marked `learn-mcp`. Unavailable live grounding is marked `local-fallback`, and all fallback content is explicitly synthetic rather than official certification documentation.
+
+## Scenario And Assurance Layer
+
+Phase 9 adds a manual product scenario boundary:
+
+```text
+Scenario pack JSON
+      |
+      +--> structure validator
+      +--> sensitive-content validator
+      +--> runtime seed adapter
+                 |
+                 +--> Director
+                 +--> Consequence Engine
+                 +--> Streaming and replay
+
+Runtime lifecycle
+      |
+      +--> allowlisted local telemetry
+      +--> optional OpenTelemetry adapter
+      +--> evaluation harness
+```
+
+The Scenario Library uses the same scoring, citation, MCP, replay, voice, and timeline contracts as internal seeds. Scenario imports do not execute production actions.
 
 ## Manager Insights
 
@@ -168,3 +195,5 @@ Phase 7 adds SSE playback and optional speech fallback.
 Phase 7.2 adds Azure Speech synthesis and local MP3 caching. Azure credentials remain optional because text fallback is always available.
 
 Phase 8 adds local MCP tools, optional live Microsoft Learn MCP grounding, and deterministic replay projections. It does not claim production checkpoint restoration or official certification status.
+
+Phase 9 adds sanitized scenario authoring, local assurance telemetry, evaluation checks, and deployment artifacts. Product UI explicitly states that the platform is a training environment with no production changes.

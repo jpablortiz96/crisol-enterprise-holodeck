@@ -23,10 +23,12 @@ import { McpToolsPanel } from "@/components/McpToolsPanel";
 import { NpcStage } from "@/components/NpcStage";
 import { RevenueTicker } from "@/components/RevenueTicker";
 import { ScenarioFeed } from "@/components/ScenarioFeed";
+import { ScenarioLibrary } from "@/components/ScenarioLibrary";
 import { SeverityMeter } from "@/components/SeverityMeter";
 import { StatusPill } from "@/components/StatusPill";
 import { TimelineGraph } from "@/components/TimelineGraph";
 import { TimeTravelReplay } from "@/components/TimeTravelReplay";
+import { ProductReadinessPanel } from "@/components/ProductReadinessPanel";
 
 const PLAYBACK_SPEEDS: PlaybackSpeed[] = [0.75, 1, 1.25];
 
@@ -37,6 +39,8 @@ export function WarRoom() {
     latestReport,
     fragilityMap,
     readinessSummary,
+    scenarios,
+    selectedScenarioId,
     voiceStatus,
     voiceEnabled,
     receivedEvents,
@@ -63,6 +67,9 @@ export function WarRoom() {
   }, [initialize]);
 
   const currentTurn = session?.turns.at(-1);
+  const selectedScenario = scenarios.find(
+    (scenario) => scenario.scenario_id === selectedScenarioId,
+  );
   const reportReady = Boolean(session?.final_score.overall_score);
   const activeReport = reportReady ? session?.final_score ?? null : playbackStatus === "idle" ? latestReport : null;
   const maxSeverity = session?.timeline.summary.max_severity ?? 0;
@@ -184,11 +191,16 @@ export function WarRoom() {
 
       {error && <div className="error-banner">{error}</div>}
 
+      <section className="product-control-grid">
+        <ScenarioLibrary />
+        <ProductReadinessPanel />
+      </section>
+
       <section className="war-room-grid">
         <aside className="left-rail">
           <SessionSummary
-            title={session?.scenario.title}
-            roleId={session?.scenario.role_id}
+            title={session?.scenario.title ?? selectedScenario?.title}
+            roleId={session?.scenario.role_id ?? selectedScenario?.role_id}
             sessionId={session?.session_id}
             streamStatus={streamStatus}
             playbackStatus={playbackStatus}
@@ -248,6 +260,10 @@ export function WarRoom() {
         <TimeTravelReplay />
         <McpToolsPanel />
       </section>
+
+      <footer className="enterprise-boundary-footer">
+        Training environment · sanitized data · no production changes
+      </footer>
     </main>
   );
 }

@@ -12,6 +12,33 @@ export type HealthResponse = {
   phase: string;
 };
 
+export type ScenarioSummary = {
+  scenario_id: string;
+  title: string;
+  industry: string;
+  role_id: string;
+  difficulty: string;
+  estimated_minutes: number;
+  data_classification: "sanitized-training";
+  tags: string[];
+};
+
+export type TelemetrySummary = {
+  status: string;
+  evaluation_status: string;
+  evaluation_score: number | null;
+  data_mode: string;
+  production_changes: boolean;
+  event_count: number;
+  event_types: Record<string, number>;
+  latest_event: {
+    event_type: string;
+    timestamp: string;
+    payload: Record<string, unknown>;
+  } | null;
+  storage: string;
+};
+
 export type VoiceSynthesisResult = {
   enabled: boolean;
   provider: string;
@@ -116,6 +143,7 @@ export type ScoreDimension = {
   description?: string;
   linked_skills?: string[];
   linked_certifications?: string[];
+  citations?: Citation[];
 };
 
 export type FailureMode = {
@@ -196,6 +224,10 @@ export type SimulationRun = {
     title: string;
     role_id: string;
     initial_stakes: string;
+    industry?: string;
+    difficulty?: string;
+    estimated_minutes?: number;
+    data_classification?: string;
     intro?: string;
     citations?: Citation[];
   };

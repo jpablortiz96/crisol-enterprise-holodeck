@@ -31,7 +31,7 @@ def build_fragility_map() -> dict[str, Any]:
         "role_risk": _role_risk(sessions, reports),
         "skill_fragility": _skill_fragility(reports),
         "certification_readiness": _certification_readiness(reports),
-        "privacy_note": "Synthetic aggregate data only. No PII.",
+        "privacy_note": "Sanitized aggregate training data. No PII.",
     }
 
 
@@ -62,7 +62,7 @@ def _empty_state() -> dict[str, Any]:
         "role_risk": [],
         "skill_fragility": [],
         "certification_readiness": [],
-        "privacy_note": "Synthetic aggregate data only. No PII. Run a scenario first to populate manager insights.",
+        "privacy_note": "Sanitized aggregate training data. No PII. Run a scenario first to populate manager insights.",
     }
 
 
@@ -155,7 +155,7 @@ def _certification_readiness(reports: list[dict[str, Any]]) -> list[dict[str, An
             "certification_id": certification_id,
             "alignment_score": round(sum(scores) / len(scores), 1),
             "risk": _risk_for_alignment(sum(scores) / len(scores)),
-            "note": "Synthetic readiness signal only.",
+            "note": "Sanitized training readiness signal only.",
         }
         for certification_id, scores in sorted(grouped.items())
     ]
@@ -192,7 +192,7 @@ def _manager_action(weak_dimensions: list[str]) -> str:
     if not weak_dimensions:
         return "Maintain current practice cadence and rotate scenario difficulty."
     first = weak_dimensions[0].replace("_", " ")
-    return f"Schedule a focused synthetic drill for {first} and review cited evidence after the run."
+    return f"Schedule a focused practice scenario for {first} and review cited evidence after the run."
 
 
 def _skill_intervention(dimension_id: str) -> str:

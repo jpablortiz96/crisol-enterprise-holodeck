@@ -144,6 +144,6 @@ def _manager_note(score_report: dict[str, Any], top_gap_dimension: str) -> str:
     band = score_report.get("readiness_band", "developing")
     score = score_report.get("score", score_report.get("overall_score", 0))
     return (
-        f"Synthetic readiness is {band} at {score}. "
+        f"Sanitized training readiness is {band} at {score}. "
         f"Prioritize practice in {top_gap_dimension.replace('_', ' ')} before raising scenario difficulty."
     )

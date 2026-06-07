@@ -13,6 +13,11 @@ class BranchFromRequest(BaseModel):
     alternative_action: str
 
 
+class CustomScenarioRunRequest(BaseModel):
+    scenario_id: str
+    role_id: str | None = None
+
+
 class OntologySummary(BaseModel):
     total_nodes: int
     total_edges: int
@@ -103,6 +108,7 @@ class ScoreDimension(BaseModel):
     description: str | None = None
     linked_skills: list[str] | None = None
     linked_certifications: list[str] | None = None
+    citations: list[Citation] | None = None
 
 
 class EvidenceItem(BaseModel):

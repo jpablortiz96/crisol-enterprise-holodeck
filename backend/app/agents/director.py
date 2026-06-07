@@ -3,6 +3,10 @@ from pathlib import Path
 from typing import Any
 
 from app.grounding.local_knowledge import answer_with_citations
+from app.scenarios.library import (
+    scenario_to_runtime_seed,
+    select_scenario as select_scenario_pack,
+)
 
 
 DATA_DIR = Path(__file__).resolve().parents[1] / "data"
@@ -84,6 +88,13 @@ class ScenarioDirector:
             return json.load(source)
 
     def select_scenario(self, role_id: str, scenario_seed: str | None = None) -> dict[str, Any]:
+        try:
+            return scenario_to_runtime_seed(
+                select_scenario_pack(role_id=role_id, scenario_id=scenario_seed)
+            )
+        except FileNotFoundError:
+            pass
+
         scenarios = self._load_scenarios()
         if scenario_seed:
             for scenario in scenarios:
@@ -99,14 +110,20 @@ class ScenarioDirector:
 
     def start_session(self, role_id: str, scenario_seed: str | None = None) -> dict[str, Any]:
         scenario = self.select_scenario(role_id, scenario_seed)
-        intro = answer_with_citations("checkout outage split brain database recovery", top_k=3)
+        grounding_query = " ".join(
+            scenario.get("knowledge_refs", [])
+            or scenario.get("tags", [])
+            or ["incident response operational recovery"]
+        )
+        intro = answer_with_citations(grounding_query, top_k=3)
+        max_turns = len(scenario.get("runtime_turns", [])) or 5
         return {
             "session_id": f"SES-{role_id}-{scenario['id']}",
             "role_id": role_id,
             "scenario": {**scenario, "intro": intro["answer"], "citations": intro["citations"]},
             "turn_index": 0,
-            "min_turns": 5,
-            "max_turns": 5,
+            "min_turns": max_turns,
+            "max_turns": max_turns,
             "severity": 4,
             "impacted_systems": scenario["impacted_systems"],
             "history": [],
@@ -114,6 +131,10 @@ class ScenarioDirector:
 
     def build_turn_context(self, state: dict[str, Any]) -> dict[str, Any]:
         turn_index = state["turn_index"]
+        runtime_turns = state["scenario"].get("runtime_turns", [])
+        if runtime_turns:
+            return self._build_library_turn_context(state, runtime_turns[turn_index])
+
         query = TURN_QUERIES[min(turn_index, len(TURN_QUERIES) - 1)]
         grounding = answer_with_citations(query, top_k=3)
         auto_decision = AUTO_DECISION_PLAN[min(turn_index, len(AUTO_DECISION_PLAN) - 1)]
@@ -147,3 +168,34 @@ class ScenarioDirector:
         if turn_index < 2:
             return personas[:3]
         return personas[1:]
+
+    def _build_library_turn_context(
+        self,
+        state: dict[str, Any],
+        turn: dict[str, Any],
+    ) -> dict[str, Any]:
+        scenario = state["scenario"]
+        query = " ".join(
+            [
+                *scenario.get("knowledge_refs", []),
+                *scenario.get("tags", []),
+                *turn.get("evaluation_focus", []),
+            ]
+        )
+        grounding = answer_with_citations(query, top_k=3)
+        options = turn["options"]
+        personas = [persona["persona"] for persona in scenario.get("personas", [])]
+        return {
+            "turn_number": state["turn_index"] + 1,
+            "scenario_id": scenario["id"],
+            "severity": state["severity"],
+            "affected_systems": state["impacted_systems"],
+            "situation": (
+                f"Severity {state['severity']} across {', '.join(state['impacted_systems'])}. "
+                f"{turn['situation']} {grounding['answer']}"
+            ),
+            "active_npcs": personas or self._active_npcs(state["severity"], state["turn_index"]),
+            "available_options": options,
+            "auto_decision": options[0],
+            "citations": grounding["citations"],
+        }

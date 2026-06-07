@@ -75,6 +75,11 @@ def generate_competence_report(session: dict[str, Any]) -> dict[str, Any]:
         [
             *_collect_session_citations(session),
             *[citation for item in evidence_trail for citation in item["citations"]],
+            *[
+                citation
+                for item in certification_alignment
+                for citation in item.get("citations", [])
+            ],
             *[citation for item in next_best_actions for citation in item["citations"]],
         ]
     )
@@ -86,6 +91,10 @@ def generate_competence_report(session: dict[str, Any]) -> dict[str, Any]:
             "description": rubric[dimension_id]["description"],
             "linked_skills": rubric[dimension_id]["linked_skills"],
             "linked_certifications": rubric[dimension_id]["linked_certifications"],
+            "citations": answer_with_citations(
+                _query_for_dimension(dimension_id),
+                top_k=2,
+            )["citations"],
         }
         for dimension_id, score in dimension_scores.items()
     }
@@ -111,7 +120,11 @@ def _score_dimensions(session: dict[str, Any], rubric: dict[str, dict[str, Any]]
     scores = {dimension_id: 62.0 for dimension_id in rubric}
     for turn in session.get("turns", []):
         action_type = turn["decision"].get("action_type", "")
-        for dimension_id, delta in ACTION_IMPACTS.get(action_type, {}).items():
+        action_impacts = ACTION_IMPACTS.get(action_type) or _generic_action_impacts(
+            turn["decision"],
+            rubric,
+        )
+        for dimension_id, delta in action_impacts.items():
             scores[dimension_id] = max(0.0, min(100.0, scores[dimension_id] + delta))
         revenue_delta = float(turn["consequence"].get("revenue_delta", 0.0))
         if revenue_delta > 0:
@@ -119,6 +132,25 @@ def _score_dimensions(session: dict[str, Any], rubric: dict[str, dict[str, Any]]
         elif revenue_delta < 0:
             scores["business_risk_control"] = min(100.0, scores["business_risk_control"] + 5)
     return scores
+
+
+def _generic_action_impacts(
+    decision: dict[str, Any],
+    rubric: dict[str, dict[str, Any]],
+) -> dict[str, float]:
+    risk_effect = decision.get("risk_effect", "neutral")
+    base_delta = {"decrease": 10.0, "increase": -12.0, "neutral": 2.0}.get(
+        risk_effect,
+        0.0,
+    )
+    impacts: dict[str, float] = {}
+    competencies = set(decision.get("competencies", []))
+    for dimension_id, dimension in rubric.items():
+        if competencies.intersection(dimension["linked_skills"]):
+            impacts[dimension_id] = base_delta
+    if not impacts:
+        impacts["triage"] = base_delta
+    return impacts
 
 
 def _build_evidence_trail(session: dict[str, Any]) -> list[dict[str, Any]]:
@@ -224,7 +256,7 @@ def _certification_alignment(
                 "certification_id": certification_id,
                 "alignment_score": alignment_score,
                 "risk": _risk_for_score(alignment_score),
-                "note": "Synthetic readiness guidance only; not an official certification status.",
+                "note": "Sanitized training guidance only; not an official certification status.",
                 "source_mode": learn_context["mode"],
                 "learn_context_available": (
                     learn_context["mode"] == "learn-mcp" and bool(learn_context["results"])
@@ -340,7 +372,7 @@ def _executive_summary(score: float, readiness_band: str, failure_modes: list[di
     if failure_modes:
         first_mode = failure_modes[0]["description"]
         return f"Readiness is {readiness_band} at {score}. Primary concern: {first_mode}"
-    return f"Readiness is {readiness_band} at {score}, with no critical failure mode detected in this synthetic run."
+    return f"Readiness is {readiness_band} at {score}, with no critical failure mode detected in this training run."
 
 
 def _query_for_dimension(dimension_id: str) -> str:

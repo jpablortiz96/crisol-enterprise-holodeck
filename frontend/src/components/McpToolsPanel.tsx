@@ -34,7 +34,7 @@ export function McpToolsPanel() {
         className="control-button control-secondary mcp-demo-button"
       >
         {isMcpLoading ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
-        {isMcpLoading ? "Running Demo" : "Run MCP Demo"}
+        {isMcpLoading ? "Running Preview" : "Run Tool Preview"}
       </button>
 
       {mcpDemo && (

@@ -26,13 +26,13 @@ def build_mcp_server() -> Any | None:
     server = FastMCP(
         "CRISOL",
         instructions=(
-            "CRISOL runs synthetic role-readiness simulacrums, deterministic replay "
+            "CRISOL runs sanitized role-readiness simulacrums, deterministic replay "
             "projections, cited competence reports, and aggregate manager insights."
         ),
         log_level="WARNING",
     )
 
-    @server.tool(description="Start a synthetic CRISOL role-readiness incident simulacrum.")
+    @server.tool(description="Start a sanitized CRISOL role-readiness incident simulacrum.")
     def start_simulacrum(
         role: str = "ROLE-SRE",
         difficulty: str = "standard",
@@ -44,7 +44,7 @@ def build_mcp_server() -> Any | None:
     def get_situation(session_id: str) -> dict[str, Any]:
         return get_situation_tool(session_id)
 
-    @server.tool(description="Apply one decision and return its synthetic consequences.")
+    @server.tool(description="Apply one decision and return its modeled consequences.")
     def make_decision(session_id: str, action: str) -> dict[str, Any]:
         return make_decision_tool(session_id, action)
 
@@ -56,7 +56,7 @@ def build_mcp_server() -> Any | None:
     ) -> dict[str, Any]:
         return branch_from_tool(session_id, decision_node_id, alternative_action)
 
-    @server.tool(description="Generate a cited synthetic competence report for a session.")
+    @server.tool(description="Generate a cited competence report for a sanitized training session.")
     def get_competence_report(session_id: str) -> dict[str, Any]:
         return get_competence_report_tool(session_id)
 

@@ -11,6 +11,7 @@ from app.branching.timeline import build_timeline, create_decision_node
 from app.ontology.graph import load_ontology
 from app.scoring.competence_report import generate_competence_report
 from app.storage.session_store import load_session, save_session
+from app.telemetry.events import emit_event
 
 
 def branch_from_session(
@@ -50,7 +51,7 @@ def branch_from_session(
             "impacted_systems": list(root_node["affected_systems"]),
             "revenue_at_risk": float(root_node["revenue_at_risk"]),
             "current_branch_id": root_node["branch_id"],
-            "cascade_roots": ["SVC-checkout"],
+            "cascade_roots": list(root_node["affected_systems"][:1]),
             "history": [],
             "turn_index": 0,
         }
@@ -127,6 +128,19 @@ def branch_from_session(
                 for citation in turn.get("citations", [])
             ],
         ]
+    )
+    emit_event(
+        "replay_branched",
+        {
+            "session_id": new_session_id,
+            "source_session_id": session_id,
+            "branch_session_id": new_session_id,
+            "scenario_id": projected_session["scenario"]["id"],
+            "role_id": projected_session["scenario"]["role_id"],
+            "score": comparison["alternative_projected_score"],
+            "citation_count": len(citations),
+            "status": "completed",
+        },
     )
     return {
         "source_session_id": session_id,

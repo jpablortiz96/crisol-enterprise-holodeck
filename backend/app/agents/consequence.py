@@ -47,19 +47,12 @@ ACTION_EFFECTS = {
 
 def evaluate_decision(graph: nx.DiGraph, state: dict[str, Any], decision: dict[str, Any]) -> dict[str, Any]:
     action_type = decision.get("action_type", "")
-    effect = ACTION_EFFECTS.get(
-        action_type,
-        {
-            "delta": 0,
-            "query": "incident escalation communication",
-            "world_delta": "The action keeps the incident moving but does not materially change risk.",
-        },
-    )
+    effect = ACTION_EFFECTS.get(action_type) or _scenario_effect(state, decision)
     turn_number = state["turn_index"] + 1
     severity_delta = effect["delta"]
     new_severity = max(1, min(5, state["severity"] + severity_delta))
     current_systems = list(state["impacted_systems"])
-    affected = _affected_for_action(graph, action_type, current_systems)
+    affected = _affected_for_action(graph, state, decision, current_systems)
     previous_revenue = float(state.get("revenue_at_risk", revenue_at_risk(graph, current_systems)))
     exposure = _contract_exposure(graph, affected)
     revenue = round(sum(item["exposure"] for item in exposure), 2)
@@ -101,7 +94,21 @@ def evaluate_decision(graph: nx.DiGraph, state: dict[str, Any], decision: dict[s
     }
 
 
-def _affected_for_action(graph: nx.DiGraph, action_type: str, current_systems: list[str]) -> list[str]:
+def _affected_for_action(
+    graph: nx.DiGraph,
+    state: dict[str, Any],
+    decision: dict[str, Any],
+    current_systems: list[str],
+) -> list[str]:
+    action_type = decision.get("action_type", "")
+    scenario = state.get("scenario", {})
+    if scenario.get("source") == "scenario-library" and scenario.get("id") != "SCN-SRE-001":
+        return _affected_for_scenario_action(
+            graph,
+            current_systems,
+            decision.get("risk_effect", "neutral"),
+        )
+
     if action_type in {"restart_checkout", "ignore_database_symptoms", "failover_without_validation"}:
         return affected_systems(graph, ["SVC-checkout"])
 
@@ -120,6 +127,43 @@ def _affected_for_action(graph: nx.DiGraph, action_type: str, current_systems: l
         return ["SVC-checkout", "SVC-orders"]
 
     return sorted(set(current_systems))
+
+
+def _affected_for_scenario_action(
+    graph: nx.DiGraph,
+    current_systems: list[str],
+    risk_effect: str,
+) -> list[str]:
+    if risk_effect == "increase":
+        expanded = set(current_systems)
+        for system_id in current_systems:
+            if system_id in graph:
+                expanded.update(affected_systems(graph, [system_id]))
+        return sorted(expanded)
+    if risk_effect == "decrease" and len(current_systems) > 1:
+        return sorted(current_systems[:-1])
+    return sorted(set(current_systems))
+
+
+def _scenario_effect(state: dict[str, Any], decision: dict[str, Any]) -> dict[str, Any]:
+    risk_effect = decision.get("risk_effect", "neutral")
+    delta = {"increase": 1, "decrease": -1, "neutral": 0}.get(risk_effect, 0)
+    scenario = state.get("scenario", {})
+    query = " ".join(
+        [
+            decision.get("label", ""),
+            *scenario.get("knowledge_refs", []),
+            *scenario.get("tags", []),
+        ]
+    )
+    return {
+        "delta": delta,
+        "query": query or "incident escalation communication",
+        "world_delta": decision.get(
+            "expected_outcome",
+            "The action advances the scenario without changing the modeled risk.",
+        ),
+    }
 
 
 def _contract_exposure(graph: nx.DiGraph, affected_system_ids: list[str]) -> list[dict[str, Any]]:

@@ -93,8 +93,12 @@ def build_stream_events(session: dict[str, Any], manager_snapshot: dict[str, Any
     return events
 
 
-async def scenario_event_stream(role_id: str = "ROLE-SRE", delay_seconds: float = 0.25) -> AsyncIterator[str]:
-    session = run_simulation(role_id=role_id, auto_mode=True)
+async def scenario_event_stream(
+    role_id: str = "ROLE-SRE",
+    scenario_id: str | None = None,
+    delay_seconds: float = 0.25,
+) -> AsyncIterator[str]:
+    session = run_simulation(role_id=role_id, scenario_seed=scenario_id, auto_mode=True)
     events = build_stream_events(session, manager_snapshot=build_fragility_map())
 
     for event in events:

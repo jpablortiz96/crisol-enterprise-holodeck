@@ -9,10 +9,14 @@ import {
   getLatestReport,
   getMcpTools,
   getReadinessSummary,
+  getScenarios,
+  getTelemetrySummary,
   getVoiceStatus,
   runMcpDemo as runMcpDemoRequest,
   runScenario,
+  runCustomScenario,
   scenarioStreamUrl,
+  streamCustomScenarioUrl,
 } from "@/lib/api";
 import { PlaybackDirector } from "@/lib/playback";
 import type {
@@ -29,11 +33,13 @@ import type {
   PlaybackStatus,
   ReadinessSummary,
   ReplayBranchResult,
+  ScenarioSummary,
   SimulationRun,
   StreamEventEnvelope,
   StreamEventName,
   StreamStatus,
   TimelineResponse,
+  TelemetrySummary,
   TurnRecord,
   VoiceStatusResponse,
   VoiceSynthesisResult,
@@ -45,6 +51,9 @@ type WarRoomState = {
   latestReport: CompetenceReport | null;
   fragilityMap: ManagerFragilityMap | null;
   readinessSummary: ReadinessSummary | null;
+  scenarios: ScenarioSummary[];
+  selectedScenarioId: string | null;
+  telemetrySummary: TelemetrySummary | null;
   mcpTools: McpTool[];
   mcpDemo: McpDemoResponse | null;
   replayBranch: ReplayBranchResult | null;
@@ -70,6 +79,7 @@ type WarRoomState = {
   replaySession: () => void;
   setPlaybackSpeed: (speed: PlaybackSpeed) => void;
   toggleVoice: () => void;
+  selectScenario: (scenarioId: string) => void;
   setSelectedDecisionNode: (nodeId: string) => void;
   branchFromDecision: (alternativeAction: string) => Promise<void>;
   runMcpDemo: () => Promise<void>;
@@ -122,6 +132,9 @@ export const useWarRoomStore = create<WarRoomState>((set, get) => {
     latestReport: null,
     fragilityMap: null,
     readinessSummary: null,
+    scenarios: [],
+    selectedScenarioId: null,
+    telemetrySummary: null,
     mcpTools: [],
     mcpDemo: null,
     replayBranch: null,
@@ -142,14 +155,17 @@ export const useWarRoomStore = create<WarRoomState>((set, get) => {
     initialize: async () => {
       set({ isLoading: true, error: null });
       try {
-        const [health, latestReport, readinessSummary, fragilityMap, voiceStatus, mcpTools] = await Promise.allSettled([
+        const [health, latestReport, readinessSummary, fragilityMap, voiceStatus, mcpTools, scenarios, telemetrySummary] = await Promise.allSettled([
           getHealth(),
           getLatestReport(),
           getReadinessSummary(),
           getFragilityMap(),
           getVoiceStatus(),
           getMcpTools(),
+          getScenarios(),
+          getTelemetrySummary(),
         ]);
+        const availableScenarios = scenarios.status === "fulfilled" ? scenarios.value : [];
 
         set({
           health: health.status === "fulfilled" ? health.value : null,
@@ -158,6 +174,13 @@ export const useWarRoomStore = create<WarRoomState>((set, get) => {
           fragilityMap: fragilityMap.status === "fulfilled" ? fragilityMap.value : null,
           voiceStatus: voiceStatus.status === "fulfilled" ? voiceStatus.value : TEXT_ONLY_VOICE_STATUS,
           mcpTools: mcpTools.status === "fulfilled" ? mcpTools.value.tools : [],
+          scenarios: availableScenarios,
+          selectedScenarioId:
+            get().selectedScenarioId
+            ?? availableScenarios.find((scenario) => scenario.scenario_id === "SCN-SRE-001")?.scenario_id
+            ?? availableScenarios[0]?.scenario_id
+            ?? null,
+          telemetrySummary: telemetrySummary.status === "fulfilled" ? telemetrySummary.value : null,
           isLoading: false,
         });
       } catch (error) {
@@ -178,11 +201,17 @@ export const useWarRoomStore = create<WarRoomState>((set, get) => {
         streamStatus: "idle",
       });
       try {
-        const session = await runScenario("ROLE-SRE");
-        const [fragilityMap, readinessSummary, latestReport] = await Promise.allSettled([
+        const selectedScenario = get().scenarios.find(
+          (scenario) => scenario.scenario_id === get().selectedScenarioId,
+        );
+        const session = selectedScenario
+          ? await runCustomScenario(selectedScenario.scenario_id, selectedScenario.role_id)
+          : await runScenario("ROLE-SRE");
+        const [fragilityMap, readinessSummary, latestReport, telemetrySummary] = await Promise.allSettled([
           getFragilityMap(),
           getReadinessSummary(),
           getLatestReport(),
+          getTelemetrySummary(),
         ]);
 
         set({
@@ -190,6 +219,7 @@ export const useWarRoomStore = create<WarRoomState>((set, get) => {
           latestReport: latestReport.status === "fulfilled" ? latestReport.value : session.final_score,
           fragilityMap: fragilityMap.status === "fulfilled" ? fragilityMap.value : null,
           readinessSummary: readinessSummary.status === "fulfilled" ? readinessSummary.value : null,
+          telemetrySummary: telemetrySummary.status === "fulfilled" ? telemetrySummary.value : get().telemetrySummary,
           selectedDecisionNodeId: firstDecisionNodeId(session.timeline),
           replayBranch: null,
           isLoading: false,
@@ -213,7 +243,14 @@ export const useWarRoomStore = create<WarRoomState>((set, get) => {
       director.setSpeed(get().playbackSpeed);
       stopAudioPlayback();
 
-      const source = new EventSource(scenarioStreamUrl("ROLE-SRE"));
+      const selectedScenario = get().scenarios.find(
+        (scenario) => scenario.scenario_id === get().selectedScenarioId,
+      );
+      const source = new EventSource(
+        selectedScenario
+          ? streamCustomScenarioUrl(selectedScenario.scenario_id, selectedScenario.role_id)
+          : scenarioStreamUrl("ROLE-SRE"),
+      );
       liveSource = source;
       set({
         session: null,
@@ -247,6 +284,9 @@ export const useWarRoomStore = create<WarRoomState>((set, get) => {
             closeLiveSource();
             void getReadinessSummary()
               .then((readinessSummary) => set({ readinessSummary }))
+              .catch(() => undefined);
+            void getTelemetrySummary()
+              .then((telemetrySummary) => set({ telemetrySummary }))
               .catch(() => undefined);
           }
         } catch (error) {
@@ -315,6 +355,18 @@ export const useWarRoomStore = create<WarRoomState>((set, get) => {
       }
       set({ voiceEnabled: nextEnabled });
     },
+    selectScenario: (selectedScenarioId) => {
+      if (get().streamStatus === "live") {
+        return;
+      }
+      set({
+        selectedScenarioId,
+        session: null,
+        replayBranch: null,
+        selectedDecisionNodeId: null,
+        error: null,
+      });
+    },
     setSelectedDecisionNode: (selectedDecisionNodeId) => {
       set({ selectedDecisionNodeId, replayBranch: null });
     },
@@ -347,7 +399,7 @@ export const useWarRoomStore = create<WarRoomState>((set, get) => {
       } catch (error) {
         set({
           isMcpLoading: false,
-          error: error instanceof Error ? error.message : "MCP demo failed",
+          error: error instanceof Error ? error.message : "Tool preview failed",
         });
       }
     },

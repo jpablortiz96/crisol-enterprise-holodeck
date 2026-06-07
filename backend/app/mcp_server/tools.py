@@ -14,6 +14,7 @@ from app.ontology.graph import load_ontology, revenue_at_risk
 from app.replay.time_travel import branch_from_session
 from app.scoring.competence_report import generate_competence_report
 from app.storage.session_store import load_session, save_session
+from app.telemetry.events import emit_event
 
 
 _ACTIVE_SESSIONS: dict[str, dict[str, Any]] = {}
@@ -25,6 +26,7 @@ def start_simulacrum(
     difficulty: str = "standard",
     scenario_seed: str | None = None,
 ) -> dict[str, Any]:
+    _emit_tool_called("start_simulacrum")
     graph = load_ontology()
     director = ScenarioDirector()
     state = director.start_session(role, scenario_seed)
@@ -32,7 +34,7 @@ def start_simulacrum(
     state["difficulty"] = difficulty
     state["revenue_at_risk"] = revenue_at_risk(graph, state["impacted_systems"])
     state["current_branch_id"] = "BR-ROOT"
-    state["cascade_roots"] = ["SVC-checkout"]
+    state["cascade_roots"] = list(state["impacted_systems"][:1])
     root_scenario = {
         **state["scenario"],
         "initial_severity": state["severity"],
@@ -62,6 +64,7 @@ def start_simulacrum(
 
 
 def get_situation(session_id: str) -> dict[str, Any]:
+    _emit_tool_called("get_situation", session_id)
     with _SESSION_LOCK:
         entry = _ACTIVE_SESSIONS.get(session_id)
         if entry is not None:
@@ -87,6 +90,7 @@ def get_situation(session_id: str) -> dict[str, Any]:
 
 
 def make_decision(session_id: str, action: str) -> dict[str, Any]:
+    _emit_tool_called("make_decision", session_id)
     with _SESSION_LOCK:
         entry = _ACTIVE_SESSIONS.get(session_id)
         if entry is None:
@@ -147,10 +151,12 @@ def branch_from(
     decision_node_id: str,
     alternative_action: str,
 ) -> dict[str, Any]:
+    _emit_tool_called("branch_from", session_id)
     return branch_from_session(session_id, decision_node_id, alternative_action)
 
 
 def get_competence_report(session_id: str) -> dict[str, Any]:
+    _emit_tool_called("get_competence_report", session_id)
     with _SESSION_LOCK:
         entry = _ACTIVE_SESSIONS.get(session_id)
         if entry is not None:
@@ -161,13 +167,14 @@ def get_competence_report(session_id: str) -> dict[str, Any]:
 
 
 def get_manager_fragility_map() -> dict[str, Any]:
+    _emit_tool_called("get_manager_fragility_map")
     return {"fragility_map": build_fragility_map()}
 
 
 TOOL_DEFINITIONS = [
     {
         "name": "start_simulacrum",
-        "description": "Start a synthetic CRISOL role-readiness incident simulacrum.",
+        "description": "Start a sanitized CRISOL role-readiness incident simulacrum.",
         "input_schema": {
             "role": "string",
             "difficulty": "string",
@@ -195,7 +202,7 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "get_competence_report",
-        "description": "Generate a cited synthetic competence report for a session.",
+        "description": "Generate a cited competence report for a sanitized training session.",
         "input_schema": {"session_id": "string"},
     },
     {
@@ -359,3 +366,14 @@ def _session_timestamp() -> str:
 
 def _utc_now() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def _emit_tool_called(tool_name: str, session_id: str | None = None) -> None:
+    emit_event(
+        "mcp_tool_called",
+        {
+            "tool_name": tool_name,
+            "session_id": session_id,
+            "status": "called",
+        },
+    )

@@ -1,0 +1,68 @@
+{
+  "scenario_id": "SCN-SRE-001",
+  "title": "Checkout recovery under database uncertainty",
+  "industry": "Digital commerce",
+  "role_id": "ROLE-SRE",
+  "difficulty": "standard",
+  "estimated_minutes": 8,
+  "data_classification": "sanitized-training",
+  "business_context": "A fictional commerce platform is entering a high-volume ordering window when checkout failures and inconsistent order writes appear together.",
+  "systems": ["SVC-checkout", "SVC-orders", "SVC-db"],
+  "initial_stakes": "Checkout errors exceed the operating threshold, order consistency is uncertain, and dependent contracts have measurable hourly exposure.",
+  "personas": [
+    {"persona": "VP Operations", "role": "Executive command", "communication_style": "urgent", "pressure_profile": "high"},
+    {"persona": "Database Lead", "role": "Data recovery owner", "communication_style": "technical", "pressure_profile": "high"},
+    {"persona": "Support Lead", "role": "Customer operations", "communication_style": "direct", "pressure_profile": "medium"}
+  ],
+  "turns": [
+    {
+      "turn_id": "T1",
+      "situation": "Checkout workers are failing while database writer ownership remains uncertain.",
+      "options": [
+        {"id": "OPT-SRE-1A", "label": "Restart checkout service", "description": "Recycle checkout workers before validating the database writer.", "action_type": "restart_checkout", "competencies": ["SK-incident-triage"], "risk_effect": "increase", "expected_outcome": "Retry traffic expands the dependency cascade."},
+        {"id": "OPT-SRE-1B", "label": "Freeze writes and identify primary database writer", "description": "Pause risky writes and verify writer ownership.", "action_type": "freeze_db_writes", "competencies": ["SK-incident-triage", "SK-database-recovery"], "risk_effect": "decrease", "expected_outcome": "Order consistency is protected while recovery evidence is collected."}
+      ],
+      "evaluation_focus": ["SK-incident-triage", "SK-database-recovery"]
+    },
+    {
+      "turn_id": "T2",
+      "situation": "Retry volume is elevated and the database team needs a safe containment decision.",
+      "options": [
+        {"id": "OPT-SRE-2A", "label": "Freeze writes and identify primary database writer", "description": "Stop conflicting writes and validate replication health.", "action_type": "freeze_db_writes", "competencies": ["SK-database-recovery", "SK-escalation-judgment"], "risk_effect": "decrease", "expected_outcome": "The incident stabilizes around a verified writer."},
+        {"id": "OPT-SRE-2B", "label": "Fail over database immediately", "description": "Force failover without validating replication state.", "action_type": "failover_without_validation", "competencies": ["SK-database-recovery"], "risk_effect": "increase", "expected_outcome": "Data inconsistency risk remains unresolved."}
+      ],
+      "evaluation_focus": ["SK-database-recovery", "SK-escalation-judgment"]
+    },
+    {
+      "turn_id": "T3",
+      "situation": "Containment is improving, but ownership and stakeholder checkpoints are fragmented.",
+      "options": [
+        {"id": "OPT-SRE-3A", "label": "Escalate to database lead and incident command", "description": "Assign decision owners and establish a shared checkpoint cadence.", "action_type": "escalate_incident_command", "competencies": ["SK-communication", "SK-escalation-judgment"], "risk_effect": "decrease", "expected_outcome": "Recovery ownership and communications become explicit."},
+        {"id": "OPT-SRE-3B", "label": "Continue without incident command", "description": "Keep recovery inside the service team.", "action_type": "custom_continue_local", "competencies": ["SK-communication"], "risk_effect": "neutral", "expected_outcome": "Technical work continues with coordination risk."}
+      ],
+      "evaluation_focus": ["SK-communication", "SK-escalation-judgment"]
+    },
+    {
+      "turn_id": "T4",
+      "situation": "Error rates are declining, but the team must prove the fault domain before restoration.",
+      "options": [
+        {"id": "OPT-SRE-4A", "label": "Correlate traces across checkout, orders, and database", "description": "Use telemetry to validate recovery state across dependencies.", "action_type": "correlate_observability", "competencies": ["SK-observability", "SK-incident-triage"], "risk_effect": "decrease", "expected_outcome": "The fault domain and recovery evidence become clear."},
+        {"id": "OPT-SRE-4B", "label": "Restore all traffic now", "description": "Reopen traffic before consistency evidence is complete.", "action_type": "custom_restore_early", "competencies": ["SK-incident-triage"], "risk_effect": "increase", "expected_outcome": "Customer traffic returns before recovery controls are proven."}
+      ],
+      "evaluation_focus": ["SK-observability", "SK-incident-triage"]
+    },
+    {
+      "turn_id": "T5",
+      "situation": "Consistency checks pass and the team must choose the restoration pattern.",
+      "options": [
+        {"id": "OPT-SRE-5A", "label": "Restore traffic gradually after consistency checks", "description": "Reopen traffic in stages with checkpoints.", "action_type": "gradual_restore", "competencies": ["SK-database-recovery", "SK-communication"], "risk_effect": "decrease", "expected_outcome": "Customer traffic returns while residual risk remains controlled."},
+        {"id": "OPT-SRE-5B", "label": "Remove all traffic controls", "description": "Return immediately to full traffic.", "action_type": "custom_full_restore", "competencies": ["SK-communication"], "risk_effect": "increase", "expected_outcome": "The platform resumes full load without staged validation."}
+      ],
+      "evaluation_focus": ["SK-business-risk-control", "SK-communication"]
+    }
+  ],
+  "success_criteria": ["Protect write consistency", "Establish accountable incident command", "Restore traffic through measured checkpoints"],
+  "failure_modes": ["Restart before writer validation", "Unvalidated database failover", "Full restoration without consistency evidence"],
+  "knowledge_refs": ["RUNBOOK-DB-RECOVERY", "RUNBOOK-CHECKOUT-OUTAGE", "PM-SPLIT-009"],
+  "tags": ["sre", "checkout", "database-recovery", "incident-command"]
+}
