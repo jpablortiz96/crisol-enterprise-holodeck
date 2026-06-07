@@ -2,7 +2,10 @@ import type {
   CompetenceReport,
   HealthResponse,
   ManagerFragilityMap,
+  McpDemoResponse,
+  McpToolsResponse,
   ReadinessSummary,
+  ReplayBranchResult,
   SimulationRun,
   TimelineResponse,
   VoiceStatusResponse,
@@ -10,10 +13,13 @@ import type {
 
 export const API_BASE = process.env.NEXT_PUBLIC_CRISOL_API_URL || "http://127.0.0.1:8000";
 
-async function request<T>(path: string): Promise<T> {
+async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const response = await fetch(`${API_BASE}${path}`, {
+    ...init,
     headers: {
       Accept: "application/json",
+      ...(init.body ? { "Content-Type": "application/json" } : {}),
+      ...init.headers,
     },
   });
 
@@ -58,4 +64,27 @@ export function getHealth(): Promise<HealthResponse> {
 
 export function getVoiceStatus(): Promise<VoiceStatusResponse> {
   return request<VoiceStatusResponse>("/voice/status");
+}
+
+export function getMcpTools(): Promise<McpToolsResponse> {
+  return request<McpToolsResponse>("/mcp/tools");
+}
+
+export function runMcpDemo(): Promise<McpDemoResponse> {
+  return request<McpDemoResponse>("/mcp/demo", { method: "POST" });
+}
+
+export function branchFromSession(
+  sessionId: string,
+  decisionNodeId: string,
+  alternativeAction: string,
+): Promise<ReplayBranchResult> {
+  return request<ReplayBranchResult>("/replay/branch-from", {
+    method: "POST",
+    body: JSON.stringify({
+      session_id: sessionId,
+      decision_node_id: decisionNodeId,
+      alternative_action: alternativeAction,
+    }),
+  });
 }

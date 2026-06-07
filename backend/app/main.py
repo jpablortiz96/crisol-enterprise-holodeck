@@ -6,11 +6,15 @@ from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.grounding.foundry_iq import grounded_answer
+from app.grounding.learn_mcp import certification_context, search_learn_docs
 from app.insights.manager import build_fragility_map
+from app.mcp_server.tools import list_registered_tools, run_local_demo
 from app.ontology.graph import affected_systems, load_ontology, revenue_at_risk, summarize_graph
 from app.orchestration.turn_loop import run_simulation
+from app.replay.time_travel import branch_from_session
 from app.scoring.competence_report import generate_competence_report
 from app.schemas import (
+    BranchFromRequest,
     CompetenceReport,
     GroundingTestResponse,
     HealthResponse,
@@ -34,7 +38,7 @@ from app.voice.speech import (
 )
 
 
-app = FastAPI(title="CRISOL Backend", version="0.1.0")
+app = FastAPI(title="CRISOL Backend", version="0.8.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
@@ -52,7 +56,7 @@ def health() -> dict[str, str]:
     return {
         "status": "ok",
         "service": "crisol-backend",
-        "phase": "1-scaffold",
+        "phase": "8-wow-layer",
     }
 
 
@@ -83,6 +87,43 @@ def grounding_test(q: str = Query(..., min_length=1)) -> dict:
         "citations": result["citations"],
         "mode": result["mode"],
     }
+
+
+@app.get("/grounding/learn/test")
+def learn_grounding_test(q: str = Query(..., min_length=1)) -> dict:
+    return search_learn_docs(q)
+
+
+@app.get("/grounding/learn/certification/{certification_id}")
+def learn_certification_context(certification_id: str) -> dict:
+    return certification_context(certification_id)
+
+
+@app.get("/mcp/tools")
+def mcp_tools() -> dict:
+    return {
+        "mode": "fastmcp-and-local-registry",
+        "tools": list_registered_tools(),
+    }
+
+
+@app.post("/mcp/demo")
+def mcp_demo() -> dict:
+    return run_local_demo()
+
+
+@app.post("/replay/branch-from")
+def replay_branch_from(request: BranchFromRequest) -> dict:
+    try:
+        return branch_from_session(
+            request.session_id,
+            request.decision_node_id,
+            request.alternative_action,
+        )
+    except FileNotFoundError as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
 
 
 @app.get("/scenario/run", response_model=SimulationRunResponse)

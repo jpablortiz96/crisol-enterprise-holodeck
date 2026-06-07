@@ -127,3 +127,33 @@
 9. One-shot fallback path.
 
    Click `Run SRE Simulation` when you want the full deterministic session to appear at once instead of streamed playback.
+
+## Phase 8 Platform Demo
+
+1. Run the tool registry.
+
+   ```powershell
+   cd backend
+   python -m app.mcp_server.server --list-tools
+   python -m app.mcp_server.server --demo
+   ```
+
+2. Use this line:
+
+   "CRISOL is also exposed as an MCP tool server, so another agent can run simulacrums programmatically."
+
+3. Run or complete the SRE simulation in the War-Room.
+
+4. Open `Time-Travel Replay` and select the first restart decision.
+
+5. Use this line:
+
+   "Then I branch from the bad restart and ask CRISOL: what if the learner had frozen writes instead?"
+
+6. Choose `Freeze writes and identify primary database writer`, then click `Branch From This Decision`.
+
+7. Compare competence score, peak revenue-at-risk, final severity, and cited reasoning. State that this is a deterministic replay projection, not an exact production rollback.
+
+8. Open the `CRISOL MCP Server` panel and click `Run MCP Demo`.
+
+9. Open `/grounding/learn/test?q=AZ-400%20monitoring%20CI/CD` and point out whether the response mode is `learn-mcp` or `local-fallback`.

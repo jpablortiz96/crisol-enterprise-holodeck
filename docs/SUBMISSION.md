@@ -23,17 +23,25 @@ The current backend turns each run into scored readiness: weighted competence di
 
 Manager insights aggregate saved synthetic runs into a fragility map without exposing PII or individual learner identity.
 
+Phase 8 turns these capabilities into a reusable agentic platform:
+
+- A six-tool MCP server can start simulacrums, inspect situations, apply decisions, branch saved sessions, generate competence reports, and retrieve aggregate manager risk.
+- Microsoft Learn MCP provides live certification-grounded context when available, with a clearly labeled synthetic local fallback when unavailable.
+- Time-travel replay compares an original path with an alternative decision path across competence score, severity, and revenue-at-risk.
+- Replay is described and implemented as a deterministic replay projection, not an exact production rollback.
+
 ## Data Boundary
 
 All data is synthetic demonstration data. No real employee, customer, telemetry, or secret data is included.
 
 Reports use cited synthetic evidence from approved local documents and simulation outcomes. Certification alignment is synthetic readiness guidance only.
 
+Microsoft Learn MCP results are used only when the live adapter succeeds. Fallback results remain synthetic local guidance and are not presented as official certification documentation.
+
 ## Future Work
 
 - Foundry IQ grounded knowledge with citations.
 - Fabric-backed ontology mapping.
 - Live or approved synthetic Work IQ adapters.
-- Scenario scoring and coaching workflows.
-- Richer manager dashboards over aggregate readiness risk.
-- Frontend experience for demos.
+- Production-grade replay checkpoints and persisted branch graphs.
+- External MCP client packaging and deployment profiles.

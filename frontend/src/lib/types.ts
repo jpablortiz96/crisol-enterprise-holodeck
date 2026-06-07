@@ -138,6 +138,8 @@ export type CertificationAlignment = {
   alignment_score: number;
   risk: string;
   note: string;
+  source_mode: "learn-mcp" | "local-fallback";
+  learn_context_available: boolean;
   linked_dimensions?: string[];
   citations?: Citation[];
 };
@@ -266,4 +268,66 @@ export type ReadinessSummary = {
   highest_risk_dimension: string | null;
   recommended_action: string;
   session_count: number;
+};
+
+export type McpTool = {
+  name: string;
+  description: string;
+  input_schema: Record<string, string>;
+};
+
+export type McpToolsResponse = {
+  mode: string;
+  tools: McpTool[];
+};
+
+export type McpDemoResponse = {
+  tools: string[];
+  started: {
+    session_id: string;
+    scenario_id: string;
+    current_situation: string;
+  };
+  situation: {
+    current_turn: number;
+    revenue_at_risk: number;
+    citation_count: number;
+  };
+  decision: {
+    decision: string;
+    new_severity: number;
+    world_delta: string;
+  };
+  competence_report: {
+    session_id: string;
+    overall_score: number;
+    readiness_band: string;
+    evidence_count: number;
+  };
+};
+
+export type BranchComparison = {
+  original_final_score: number;
+  alternative_projected_score: number;
+  score_delta: number;
+  original_max_revenue_at_risk: number;
+  alternative_revenue_at_risk: number;
+  alternative_max_revenue_at_risk: number;
+  revenue_at_risk_delta: number;
+  original_final_severity: number;
+  alternative_final_severity: number;
+  severity_delta: number;
+  reasoning_summary: string;
+};
+
+export type ReplayBranchResult = {
+  source_session_id: string;
+  new_session_id: string;
+  branched_from_node_id: string;
+  alternative_decision: TurnRecord["decision"];
+  original_path_summary: Record<string, unknown>;
+  alternative_path_summary: Record<string, unknown>;
+  timeline: TimelineResponse;
+  comparison: BranchComparison;
+  citations: Citation[];
 };

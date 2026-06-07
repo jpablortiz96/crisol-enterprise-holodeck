@@ -3,11 +3,14 @@
 import { create } from "zustand";
 import {
   apiAssetUrl,
+  branchFromSession,
   getFragilityMap,
   getHealth,
   getLatestReport,
+  getMcpTools,
   getReadinessSummary,
   getVoiceStatus,
+  runMcpDemo as runMcpDemoRequest,
   runScenario,
   scenarioStreamUrl,
 } from "@/lib/api";
@@ -19,10 +22,13 @@ import type {
   ConsequenceDelta,
   HealthResponse,
   ManagerFragilityMap,
+  McpDemoResponse,
+  McpTool,
   NPCReaction,
   PlaybackSpeed,
   PlaybackStatus,
   ReadinessSummary,
+  ReplayBranchResult,
   SimulationRun,
   StreamEventEnvelope,
   StreamEventName,
@@ -39,6 +45,10 @@ type WarRoomState = {
   latestReport: CompetenceReport | null;
   fragilityMap: ManagerFragilityMap | null;
   readinessSummary: ReadinessSummary | null;
+  mcpTools: McpTool[];
+  mcpDemo: McpDemoResponse | null;
+  replayBranch: ReplayBranchResult | null;
+  selectedDecisionNodeId: string | null;
   voiceStatus: VoiceStatusResponse;
   voiceEnabled: boolean;
   receivedEvents: StreamEventEnvelope[];
@@ -49,6 +59,8 @@ type WarRoomState = {
   playbackStatus: PlaybackStatus;
   playbackSpeed: PlaybackSpeed;
   isLoading: boolean;
+  isMcpLoading: boolean;
+  isBranching: boolean;
   error: string | null;
   initialize: () => Promise<void>;
   runSreSimulation: () => Promise<void>;
@@ -58,6 +70,9 @@ type WarRoomState = {
   replaySession: () => void;
   setPlaybackSpeed: (speed: PlaybackSpeed) => void;
   toggleVoice: () => void;
+  setSelectedDecisionNode: (nodeId: string) => void;
+  branchFromDecision: (alternativeAction: string) => Promise<void>;
+  runMcpDemo: () => Promise<void>;
 };
 
 const STREAM_EVENT_NAMES: StreamEventName[] = [
@@ -107,6 +122,10 @@ export const useWarRoomStore = create<WarRoomState>((set, get) => {
     latestReport: null,
     fragilityMap: null,
     readinessSummary: null,
+    mcpTools: [],
+    mcpDemo: null,
+    replayBranch: null,
+    selectedDecisionNodeId: null,
     voiceStatus: TEXT_ONLY_VOICE_STATUS,
     voiceEnabled: true,
     receivedEvents: [],
@@ -117,16 +136,19 @@ export const useWarRoomStore = create<WarRoomState>((set, get) => {
     playbackStatus: "idle",
     playbackSpeed: 1,
     isLoading: false,
+    isMcpLoading: false,
+    isBranching: false,
     error: null,
     initialize: async () => {
       set({ isLoading: true, error: null });
       try {
-        const [health, latestReport, readinessSummary, fragilityMap, voiceStatus] = await Promise.allSettled([
+        const [health, latestReport, readinessSummary, fragilityMap, voiceStatus, mcpTools] = await Promise.allSettled([
           getHealth(),
           getLatestReport(),
           getReadinessSummary(),
           getFragilityMap(),
           getVoiceStatus(),
+          getMcpTools(),
         ]);
 
         set({
@@ -135,6 +157,7 @@ export const useWarRoomStore = create<WarRoomState>((set, get) => {
           readinessSummary: readinessSummary.status === "fulfilled" ? readinessSummary.value : null,
           fragilityMap: fragilityMap.status === "fulfilled" ? fragilityMap.value : null,
           voiceStatus: voiceStatus.status === "fulfilled" ? voiceStatus.value : TEXT_ONLY_VOICE_STATUS,
+          mcpTools: mcpTools.status === "fulfilled" ? mcpTools.value.tools : [],
           isLoading: false,
         });
       } catch (error) {
@@ -167,6 +190,8 @@ export const useWarRoomStore = create<WarRoomState>((set, get) => {
           latestReport: latestReport.status === "fulfilled" ? latestReport.value : session.final_score,
           fragilityMap: fragilityMap.status === "fulfilled" ? fragilityMap.value : null,
           readinessSummary: readinessSummary.status === "fulfilled" ? readinessSummary.value : null,
+          selectedDecisionNodeId: firstDecisionNodeId(session.timeline),
+          replayBranch: null,
           isLoading: false,
         });
       } catch (error) {
@@ -193,6 +218,8 @@ export const useWarRoomStore = create<WarRoomState>((set, get) => {
       set({
         session: null,
         fragilityMap: null,
+        replayBranch: null,
+        selectedDecisionNodeId: null,
         receivedEvents: [],
         liveEvents: [],
         activeEvent: null,
@@ -288,6 +315,42 @@ export const useWarRoomStore = create<WarRoomState>((set, get) => {
       }
       set({ voiceEnabled: nextEnabled });
     },
+    setSelectedDecisionNode: (selectedDecisionNodeId) => {
+      set({ selectedDecisionNodeId, replayBranch: null });
+    },
+    branchFromDecision: async (alternativeAction) => {
+      const { session, selectedDecisionNodeId } = get();
+      if (!session || !selectedDecisionNodeId) {
+        set({ error: "Select a completed decision before branching." });
+        return;
+      }
+      set({ isBranching: true, replayBranch: null, error: null });
+      try {
+        const replayBranch = await branchFromSession(
+          session.session_id,
+          selectedDecisionNodeId,
+          alternativeAction,
+        );
+        set({ replayBranch, isBranching: false });
+      } catch (error) {
+        set({
+          isBranching: false,
+          error: error instanceof Error ? error.message : "Replay branch failed",
+        });
+      }
+    },
+    runMcpDemo: async () => {
+      set({ isMcpLoading: true, mcpDemo: null, error: null });
+      try {
+        const mcpDemo = await runMcpDemoRequest();
+        set({ mcpDemo, isMcpLoading: false });
+      } catch (error) {
+        set({
+          isMcpLoading: false,
+          error: error instanceof Error ? error.message : "MCP demo failed",
+        });
+      }
+    },
   };
 });
 
@@ -347,10 +410,13 @@ function reducePlaybackEvent(state: WarRoomState, payload: StreamEventEnvelope):
   }
 
   if (payload.event === "timeline_updated") {
+    const timeline = payload.data.timeline as TimelineResponse;
     update.session = {
       ...session,
-      timeline: payload.data.timeline as TimelineResponse,
+      timeline,
     };
+    update.selectedDecisionNodeId =
+      state.selectedDecisionNodeId ?? firstDecisionNodeId(timeline);
     return update;
   }
 
@@ -380,6 +446,8 @@ function reducePlaybackEvent(state: WarRoomState, payload: StreamEventEnvelope):
     const mergedSession = mergeReactionVoices(completedSession, session);
     update.session = mergedSession;
     update.latestReport = mergedSession.final_score;
+    update.selectedDecisionNodeId =
+      state.selectedDecisionNodeId ?? firstDecisionNodeId(mergedSession.timeline);
     return update;
   }
 
@@ -574,4 +642,8 @@ function createEmptyReport(sessionId: string): CompetenceReport & { score?: numb
     next_best_actions: [],
     citations: [],
   };
+}
+
+function firstDecisionNodeId(timeline: TimelineResponse): string | null {
+  return timeline.nodes.find((node) => node.turn_number > 0)?.node_id ?? null;
 }

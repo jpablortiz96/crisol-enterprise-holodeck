@@ -1,5 +1,6 @@
 from typing import Any
 
+from app.grounding.learn_mcp import search_learn_docs
 from app.grounding.local_knowledge import answer_with_citations
 from app.scoring.rubric import get_rubric
 
@@ -211,6 +212,10 @@ def _certification_alignment(
         for certification in rubric[dimension_id]["linked_certifications"]:
             cert_scores.setdefault(certification, []).append(score)
 
+    learn_context = search_learn_docs(
+        f"certification readiness {' '.join(sorted(cert_scores))}",
+        top_k=3,
+    )
     alignment = []
     for certification_id, scores in sorted(cert_scores.items()):
         alignment_score = round(sum(scores) / len(scores), 1)
@@ -220,6 +225,10 @@ def _certification_alignment(
                 "alignment_score": alignment_score,
                 "risk": _risk_for_score(alignment_score),
                 "note": "Synthetic readiness guidance only; not an official certification status.",
+                "source_mode": learn_context["mode"],
+                "learn_context_available": (
+                    learn_context["mode"] == "learn-mcp" and bool(learn_context["results"])
+                ),
                 "linked_dimensions": [
                     dimension_id
                     for dimension_id, dimension in rubric.items()

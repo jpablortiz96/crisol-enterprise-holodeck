@@ -37,9 +37,12 @@ CRISOL models role readiness through a five-agent architecture connected to an o
 9. `app.storage.session_store` saves completed sessions under ignored local JSON storage.
 10. `app.scoring.competence_report` converts sessions into cited readiness reports.
 11. `app.insights.manager` aggregates saved sessions into a no-PII fragility map.
-12. FastAPI endpoints expose health, graph summary, revenue-at-risk, grounding test, scenario run, live scenario stream, saved sessions, timeline views, reports, and manager summaries.
-13. The Next.js War-Room consumes the one-shot scenario endpoint and the live SSE stream.
-14. Future phases will add live indexing, hosted agents, and live ontology sources.
+12. `app.grounding.learn_mcp` connects to Microsoft Learn MCP when available and returns a bounded synthetic fallback otherwise.
+13. `app.replay.time_travel` creates deterministic replay projections from saved decision nodes.
+14. `app.mcp_server` exposes six CRISOL capabilities through a local registry and `FastMCP`.
+15. FastAPI endpoints expose health, graph summary, revenue-at-risk, grounding tests, scenario run, live scenario stream, saved sessions, replay, MCP tools, reports, and manager summaries.
+16. The Next.js War-Room consumes the one-shot scenario endpoint, live SSE stream, replay endpoint, and MCP demo endpoint.
+17. Future phases will add live indexing, hosted agents, and live ontology sources.
 
 ## Local Orchestration Loop
 
@@ -63,6 +66,31 @@ Phase 4 makes the consequence chain replay-ready:
 - The timeline summary tracks max severity, max revenue-at-risk, final severity, and final revenue-at-risk.
 
 The JSON shape is ready for a future ReactFlow frontend, but no frontend is created in this phase.
+
+## MCP And Replay Layer
+
+Phase 8 adds two reusable platform interfaces:
+
+```text
+MCP client or War-Room
+        |
+        +--> CRISOL MCP registry / FastMCP
+        |        |
+        |        +--> Director + Consequence Engine
+        |        +--> Competence Report
+        |        +--> Manager Fragility Map
+        |        +--> Replay Projection
+        |
+        +--> FastAPI replay and MCP endpoints
+                 |
+                 +--> Saved synthetic sessions
+                 +--> Microsoft Learn MCP adapter
+                 +--> Synthetic local knowledge fallback
+```
+
+The MCP registry and HTTP endpoints call the same underlying services. The replay layer copies the pre-branch timeline, replaces the selected decision, simulates the remaining path deterministically, and saves a new session. It is a deterministic replay projection, not an exact production rollback.
+
+The Learn adapter uses streamable HTTP with a bounded timeout. Live results are marked `learn-mcp`. Unavailable live grounding is marked `local-fallback`, and all fallback content is explicitly synthetic rather than official certification documentation.
 
 ## Manager Insights
 
@@ -138,3 +166,5 @@ Phase 6 adds the local War-Room frontend.
 Phase 7 adds SSE playback and optional speech fallback.
 
 Phase 7.2 adds Azure Speech synthesis and local MP3 caching. Azure credentials remain optional because text fallback is always available.
+
+Phase 8 adds local MCP tools, optional live Microsoft Learn MCP grounding, and deterministic replay projections. It does not claim production checkpoint restoration or official certification status.

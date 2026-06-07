@@ -19,12 +19,14 @@ import { CompetenceGauge } from "@/components/CompetenceGauge";
 import { CompetenceReport } from "@/components/CompetenceReport";
 import { LiveEventRail } from "@/components/LiveEventRail";
 import { ManagerFragilityMap } from "@/components/ManagerFragilityMap";
+import { McpToolsPanel } from "@/components/McpToolsPanel";
 import { NpcStage } from "@/components/NpcStage";
 import { RevenueTicker } from "@/components/RevenueTicker";
 import { ScenarioFeed } from "@/components/ScenarioFeed";
 import { SeverityMeter } from "@/components/SeverityMeter";
 import { StatusPill } from "@/components/StatusPill";
 import { TimelineGraph } from "@/components/TimelineGraph";
+import { TimeTravelReplay } from "@/components/TimeTravelReplay";
 
 const PLAYBACK_SPEEDS: PlaybackSpeed[] = [0.75, 1, 1.25];
 
@@ -240,6 +242,11 @@ export function WarRoom() {
       <section className="bottom-intelligence">
         <CompetenceReport report={activeReport ?? null} />
         <ManagerFragilityMap map={fragilityMap} />
+      </section>
+
+      <section className="platform-intelligence">
+        <TimeTravelReplay />
+        <McpToolsPanel />
       </section>
     </main>
   );

@@ -11,7 +11,7 @@ CRISOL turns enterprise learning into realistic, measurable practice. It connect
 - How ready is a learner for a target role?
 - Which skills and certifications are missing?
 
-The Phase 1 scaffold is intentionally local and synthetic. Phase 2 adds a local citation-first grounding layer over approved synthetic documents, plus a Foundry IQ adapter skeleton for later live configuration. Phase 3 adds the first deterministic multi-agent simulation loop for terminal demos. Phase 4 adds replay-ready branching timelines and local session storage. Phase 5 adds competence reporting and aggregate manager insights. Phase 6 adds the first browser-based War-Room frontend. Phase 7 adds live scenario playback over Server-Sent Events and cinematic War-Room updates. Phase 7.2 makes Azure Speech the primary NPC voice layer while retaining a safe text-only fallback. Phase 7.3 adds synchronized playback direction, replay controls, playback speed, and animated NPC presence. Phase 7.4 adds bounded panel layouts and deterministic Dagre positioning for the decision graph.
+The Phase 1 scaffold is intentionally local and synthetic. Phase 2 adds a local citation-first grounding layer over approved synthetic documents, plus a Foundry IQ adapter skeleton for later live configuration. Phase 3 adds the first deterministic multi-agent simulation loop for terminal demos. Phase 4 adds replay-ready branching timelines and local session storage. Phase 5 adds competence reporting and aggregate manager insights. Phase 6 adds the first browser-based War-Room frontend. Phase 7 adds live scenario playback over Server-Sent Events and cinematic War-Room updates. Phase 7.2 makes Azure Speech the primary NPC voice layer while retaining a safe text-only fallback. Phase 7.3 adds synchronized playback direction, replay controls, playback speed, and animated NPC presence. Phase 7.4 adds bounded panel layouts and deterministic Dagre positioning for the decision graph. Phase 8 exposes CRISOL through MCP tools, adds Microsoft Learn MCP grounding with a safe fallback, and introduces time-travel branch comparison.
 
 ## Why It Is Different
 
@@ -41,6 +41,9 @@ The current backend includes:
 - A frontend Playback Director that buffers SSE intake and deliberately advances visible events.
 - Pause, resume, replay, and `0.75x`, `1x`, and `1.25x` playback controls.
 - Animated 2D/2.5D persona cards for VP Operations, Product Manager, Database Lead, and Support Lead.
+- A six-tool CRISOL MCP server backed by the same simulation, replay, reporting, and manager services.
+- A Microsoft Learn MCP adapter with bounded timeouts and synthetic local fallback.
+- Deterministic time-travel replay projections from saved decision nodes.
 
 The backend exposes:
 
@@ -60,6 +63,36 @@ The backend exposes:
 - `GET /reports/latest`
 - `GET /manager/fragility-map`
 - `GET /manager/readiness-summary`
+- `GET /mcp/tools`
+- `POST /mcp/demo`
+- `POST /replay/branch-from`
+- `GET /grounding/learn/test?q=AZ-400%20monitoring%20CI/CD`
+- `GET /grounding/learn/certification/{certification_id}`
+
+## CRISOL MCP Server
+
+CRISOL exposes six tools: `start_simulacrum`, `get_situation`, `make_decision`, `branch_from`, `get_competence_report`, and `get_manager_fragility_map`. The local registry is always available. When the `mcp` package is installed, the same functions are exposed through a `FastMCP` entrypoint for stdio, SSE, or streamable HTTP clients.
+
+```powershell
+cd backend
+python -m app.mcp_server.server --list-tools
+python -m app.mcp_server.server --demo
+python -m app.mcp_server.server --serve --transport stdio
+```
+
+The MCP tools are implemented locally and can be wired to MCP clients. Tool behavior remains synthetic and uses the same cited CRISOL scenario engine as the web application.
+
+## Microsoft Learn MCP Adapter
+
+`app.grounding.learn_mcp` uses `LEARN_MCP_URL`, defaulting to `https://learn.microsoft.com/api/mcp`. It requires no authentication. A live response is labeled `learn-mcp`; network, protocol, or timeout failures return `local-fallback`.
+
+Fallback results are synthetic local guidance, not official certification documentation. Competence report alignment includes `source_mode` and `learn_context_available` so consumers can distinguish the source.
+
+## Time-Travel Replay
+
+The replay service loads a saved session, preserves turns before a selected decision node, applies an alternative action, and deterministically simulates the remaining synthetic path. It returns score, final severity, peak revenue-at-risk, reasoning, and citations for both paths.
+
+This is a **deterministic replay projection**, not an exact production rollback.
 
 ## Microsoft IQ Integration Plan
 
@@ -81,6 +114,7 @@ Backend checks:
 
 ```powershell
 cd backend
+python -m app.validate_phase8
 python -m app.validate_phase5
 python -m app.validate_phase7
 python -m app.validate_phase4
@@ -88,6 +122,8 @@ python -m app.run_scenario --role ROLE-SRE
 python -m app.grounding.build_knowledge_base
 python -m app.grounding.test_grounding
 python -m app.ontology.load
+python -m app.mcp_server.server --list-tools
+python -m app.mcp_server.server --demo
 uvicorn app.main:app --reload
 ```
 
@@ -121,6 +157,8 @@ The War-Room includes:
 - `Pause Playback` and `Resume Playback`
 - `Replay Session`
 - `0.75x`, `1x`, and `1.25x` speed controls
+- `Time-Travel Replay`
+- `CRISOL MCP Server`
 
 `Play Live Simulation` connects to `GET /scenario/stream?role_id=ROLE-SRE`. Stream intake and visible playback are separated: events can buffer immediately while the Playback Director advances the Event Rail, NPC stage, timeline, consequence metrics, competence score, coach plan, and manager snapshot in sequence. NPC reactions block progression until Azure Speech audio ends or reaches a safety timeout. Without valid Speech configuration, the same synchronized pacing uses the text-only fallback.
 
@@ -162,6 +200,9 @@ http://127.0.0.1:8000/scenario/sessions
 http://127.0.0.1:8000/reports/latest
 http://127.0.0.1:8000/manager/fragility-map
 http://127.0.0.1:8000/manager/readiness-summary
+http://127.0.0.1:8000/mcp/tools
+http://127.0.0.1:8000/grounding/learn/test?q=AZ-400%20monitoring%20CI/CD
+http://127.0.0.1:8000/grounding/learn/certification/AZ-400
 ```
 
 ## Phase Status
@@ -190,4 +231,8 @@ http://127.0.0.1:8000/manager/readiness-summary
 - [x] Phase 7.3 synchronized Playback Director.
 - [x] Phase 7.3 premium mission-control UI and animated NPC stage.
 - [x] Phase 7.4 bounded War-Room layout and deterministic decision graph.
+- [x] Phase 8 CRISOL MCP server and local tool registry.
+- [x] Phase 8 Microsoft Learn MCP adapter with safe local fallback.
+- [x] Phase 8 deterministic time-travel replay projection.
+- [x] Phase 8 replay and MCP War-Room panels.
 - [ ] Live Foundry IQ indexing and retrieval.

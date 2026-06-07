@@ -255,6 +255,14 @@ button:focus-visible {
   margin-top: 14px;
 }
 
+.platform-intelligence {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(360px, 0.65fr);
+  align-items: start;
+  gap: 14px;
+  margin-top: 14px;
+}
+
 .war-panel {
   min-width: 0;
   overflow: hidden;
@@ -262,6 +270,221 @@ button:focus-visible {
   border-radius: 8px;
   background: rgba(9, 18, 24, 0.94);
   box-shadow: 0 18px 44px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.025);
+}
+
+.replay-panel,
+.mcp-panel {
+  padding-bottom: 14px;
+}
+
+.replay-controls,
+.replay-result,
+.mcp-tool-list,
+.mcp-demo-output {
+  margin-right: 14px;
+  margin-left: 14px;
+}
+
+.replay-controls {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.8fr) minmax(300px, 1.2fr);
+  gap: 10px;
+}
+
+.technical-field {
+  display: grid;
+  min-width: 0;
+  gap: 5px;
+  color: #617783;
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.technical-field input,
+.technical-field select {
+  min-width: 0;
+  height: 38px;
+  border: 1px solid rgba(82, 105, 116, 0.42);
+  border-radius: 6px;
+  background: #071016;
+  padding: 0 10px;
+  color: #dce7ec;
+  font-size: 11px;
+  text-transform: none;
+}
+
+.technical-field input:focus,
+.technical-field select:focus {
+  border-color: rgba(103, 232, 249, 0.58);
+  outline: none;
+}
+
+.replay-quick-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.quick-action {
+  min-height: 28px;
+  border: 1px solid rgba(82, 105, 116, 0.34);
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.018);
+  padding: 5px 8px;
+  color: #71858f;
+  font-size: 9px;
+  text-align: left;
+}
+
+.quick-action:hover,
+.quick-action-active {
+  border-color: rgba(103, 232, 249, 0.45);
+  background: rgba(103, 232, 249, 0.07);
+  color: #cffafe;
+}
+
+.replay-submit {
+  grid-column: 1 / -1;
+  justify-self: start;
+}
+
+.replay-result {
+  margin-top: 14px;
+}
+
+.comparison-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.comparison-card {
+  min-width: 0;
+  border: 1px solid rgba(82, 105, 116, 0.28);
+  border-radius: 6px;
+  background: #071016;
+  padding: 10px;
+}
+
+.comparison-card > p {
+  margin-bottom: 8px;
+  color: #617783;
+  font-size: 9px;
+  text-transform: uppercase;
+}
+
+.comparison-card > div {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border-top: 1px solid rgba(82, 105, 116, 0.18);
+  padding: 6px 0;
+}
+
+.comparison-card span {
+  color: #617783;
+  font-size: 9px;
+}
+
+.comparison-card strong {
+  overflow: hidden;
+  color: #dce7ec;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.replay-reasoning {
+  margin-top: 8px;
+  border-left: 2px solid #22d3ee;
+  background: rgba(34, 211, 238, 0.04);
+  padding: 10px 12px;
+}
+
+.replay-reasoning p {
+  color: #9fb0b7;
+  font-size: 11px;
+  line-height: 17px;
+}
+
+.replay-reasoning span {
+  color: #526973;
+  font-size: 9px;
+  text-transform: uppercase;
+}
+
+.replay-empty {
+  margin: 14px;
+}
+
+.mcp-tool-list {
+  display: grid;
+  max-height: 260px;
+  overflow-y: auto;
+  border-top: 1px solid rgba(82, 105, 116, 0.2);
+}
+
+.mcp-tool-row {
+  display: grid;
+  gap: 3px;
+  border-bottom: 1px solid rgba(82, 105, 116, 0.18);
+  padding: 9px 2px;
+}
+
+.mcp-tool-row code {
+  color: #a5f3fc;
+  font-size: 10px;
+}
+
+.mcp-tool-row span {
+  color: #71858f;
+  font-size: 9px;
+  line-height: 14px;
+}
+
+.mcp-demo-button {
+  margin: 12px 14px 0;
+}
+
+.mcp-demo-output {
+  display: grid;
+  gap: 6px;
+  margin-top: 12px;
+  border: 1px solid rgba(82, 105, 116, 0.28);
+  border-radius: 6px;
+  background: #071016;
+  padding: 10px;
+}
+
+.mcp-demo-output > div {
+  display: flex;
+  min-width: 0;
+  justify-content: space-between;
+  gap: 10px;
+  color: #617783;
+  font-size: 9px;
+}
+
+.mcp-demo-output strong {
+  min-width: 0;
+  overflow: hidden;
+  color: #dce7ec;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mcp-demo-output p {
+  border-top: 1px solid rgba(82, 105, 116, 0.2);
+  padding-top: 8px;
+  color: #8da0aa;
+  font-size: 10px;
+  line-height: 15px;
 }
 
 .panel-header {
@@ -897,7 +1120,8 @@ button:focus-visible {
   }
 
   .war-room-grid,
-  .bottom-intelligence {
+  .bottom-intelligence,
+  .platform-intelligence {
     grid-template-columns: 1fr;
   }
 
@@ -990,5 +1214,10 @@ button:focus-visible {
 
   .timeline-summary span:last-child {
     display: none;
+  }
+
+  .replay-controls,
+  .comparison-grid {
+    grid-template-columns: 1fr;
   }
 }

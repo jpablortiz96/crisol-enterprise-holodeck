@@ -7,6 +7,12 @@ class HealthResponse(BaseModel):
     phase: str
 
 
+class BranchFromRequest(BaseModel):
+    session_id: str
+    decision_node_id: str
+    alternative_action: str
+
+
 class OntologySummary(BaseModel):
     total_nodes: int
     total_edges: int
@@ -128,6 +134,8 @@ class CertificationAlignment(BaseModel):
     alignment_score: float
     risk: str
     note: str
+    source_mode: str
+    learn_context_available: bool
     linked_dimensions: list[str] | None = None
     citations: list[Citation] | None = None
 
