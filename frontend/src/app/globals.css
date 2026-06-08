@@ -141,6 +141,18 @@ button:focus-visible {
   color: #cffafe;
 }
 
+.recording-toggle {
+  background: rgba(255, 255, 255, 0.025);
+  color: #a9bac2;
+}
+
+.recording-toggle:hover,
+.recording-toggle-active {
+  border-color: rgba(52, 211, 153, 0.52);
+  background: rgba(52, 211, 153, 0.08);
+  color: #a7f3d0;
+}
+
 .control-button:disabled,
 .icon-control:disabled {
   cursor: not-allowed;
@@ -420,6 +432,78 @@ button:focus-visible {
   font-size: 10px;
   text-align: center;
   text-transform: uppercase;
+}
+
+.recording-mode {
+  max-width: 1600px;
+  padding: 10px;
+}
+
+.recording-mode .command-header {
+  top: 8px;
+  min-height: 68px;
+  gap: 12px;
+  padding: 10px 12px;
+}
+
+.recording-mode .product-control-grid,
+.recording-mode .war-room-grid,
+.recording-mode .bottom-intelligence,
+.recording-mode .platform-intelligence {
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.recording-mode .war-room-grid {
+  grid-template-columns:
+    minmax(220px, 250px)
+    minmax(0, 1fr)
+    minmax(220px, 245px);
+}
+
+.recording-mode .left-rail,
+.recording-mode .center-stage,
+.recording-mode .right-rail {
+  gap: 10px;
+}
+
+.recording-mode .left-rail,
+.recording-mode .right-rail {
+  top: 92px;
+  max-height: calc(100vh - 102px);
+}
+
+.recording-mode .stage-focus {
+  height: 168px;
+  min-height: 168px;
+}
+
+.recording-mode .timeline-canvas {
+  height: clamp(300px, 35vh, 370px);
+  min-height: 300px;
+}
+
+.recording-mode .scenario-feed-scroll {
+  max-height: 440px;
+}
+
+.recording-mode .live-event-panel .text-right p,
+.recording-mode .event-item .font-mono {
+  display: none;
+}
+
+.recording-mode .product-readiness-panel .readiness-metric:nth-child(3) {
+  display: none;
+}
+
+.recording-mode .product-readiness-panel .readiness-metric-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.recording-mode .enterprise-boundary-footer {
+  margin-top: 10px;
+  padding-top: 10px;
+  color: #8da0aa;
 }
 
 .war-panel {

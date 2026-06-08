@@ -25,6 +25,7 @@ import type {
   CompetenceReport,
   ConsequenceDelta,
   HealthResponse,
+  DisplayMode,
   ManagerFragilityMap,
   McpDemoResponse,
   McpTool,
@@ -60,6 +61,7 @@ type WarRoomState = {
   selectedDecisionNodeId: string | null;
   voiceStatus: VoiceStatusResponse;
   voiceEnabled: boolean;
+  displayMode: DisplayMode;
   receivedEvents: StreamEventEnvelope[];
   liveEvents: StreamEventEnvelope[];
   activeEvent: StreamEventEnvelope | null;
@@ -79,6 +81,7 @@ type WarRoomState = {
   replaySession: () => void;
   setPlaybackSpeed: (speed: PlaybackSpeed) => void;
   toggleVoice: () => void;
+  toggleRecordingMode: () => void;
   selectScenario: (scenarioId: string) => void;
   setSelectedDecisionNode: (nodeId: string) => void;
   branchFromDecision: (alternativeAction: string) => Promise<void>;
@@ -141,6 +144,7 @@ export const useWarRoomStore = create<WarRoomState>((set, get) => {
     selectedDecisionNodeId: null,
     voiceStatus: TEXT_ONLY_VOICE_STATUS,
     voiceEnabled: true,
+    displayMode: "standard",
     receivedEvents: [],
     liveEvents: [],
     activeEvent: null,
@@ -354,6 +358,11 @@ export const useWarRoomStore = create<WarRoomState>((set, get) => {
         stopAudioPlayback();
       }
       set({ voiceEnabled: nextEnabled });
+    },
+    toggleRecordingMode: () => {
+      set({
+        displayMode: get().displayMode === "recording" ? "standard" : "recording",
+      });
     },
     selectScenario: (selectedScenarioId) => {
       if (get().streamStatus === "live") {

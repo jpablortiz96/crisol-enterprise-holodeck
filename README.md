@@ -1,180 +1,135 @@
-# CRISOL
+# CRISOL - Enterprise Holodeck
 
-The enterprise holodeck for role readiness, operational judgment, and revenue-aware practice.
+CRISOL is a revenue-aware readiness platform for practicing high-stakes enterprise decisions before they affect production.
 
-## What CRISOL Does
+## What It Does
 
-CRISOL turns enterprise learning into realistic, measurable practice. It connects synthetic learner profiles, role requirements, system dependencies, contracts, certifications, and scenario seeds into an ontology graph. The first backend slice can answer questions such as:
+CRISOL turns role requirements, system dependencies, business exposure, certifications, and sanitized scenario packs into measurable operational practice. Participants make decisions inside a branching simulation, receive synchronized stakeholder pressure, and finish with cited competence evidence and manager-level readiness signals.
 
-- Which systems are affected when a critical service fails?
-- How much synthetic hourly revenue is at risk?
-- How ready is a learner for a target role?
-- Which skills and certifications are missing?
+## Why It Matters
 
-The platform now includes a sanitized Scenario Library, deterministic simulation and replay, cited competence reporting, manager insights, MCP tools, Microsoft Learn grounding, Azure Speech with text fallback, structured local telemetry, an evaluation harness, and deployment artifacts.
+Course completion does not prove judgment under pressure. CRISOL evaluates how a participant detects risk, controls business impact, communicates, escalates, and recovers when several systems and stakeholders are moving at once.
 
-## Why It Is Different
+The platform is designed for:
 
-Most learning systems track course completion. CRISOL models business consequence. A learner can practice incident response, certification readiness, escalation judgment, and cross-role coordination against a graph that connects skills to systems, systems to contracts, and contracts to revenue exposure.
+- Operational readiness and incident-response practice.
+- Role-transition and certification preparation.
+- Cross-functional decision training.
+- Evidence-based coaching and manager planning.
+- Safe exploration of alternative decisions without production changes.
 
-## Architecture Overview
+## Product Capabilities
 
-The current backend includes:
+- Five-pack Scenario Library with validated sanitized training data.
+- One-shot and synchronized live simulations.
+- Branching consequence timeline with severity and revenue deltas.
+- Azure Speech NPC room with text fallback.
+- Cited Competence Score and targeted coaching plan.
+- Aggregate Manager Fragility Map without personal data.
+- Deterministic Time-Travel Replay projections.
+- Six-tool MCP surface for reusable scenario operations.
+- Grounded retrieval boundaries with local fallback.
+- Structured local telemetry and release evaluation.
+- Recording Mode optimized for 16:9 product capture.
 
-- A FastAPI backend service.
-- A NetworkX ontology graph loader.
-- Synthetic learners, roles, skills, certifications, systems, contracts, scenarios, and work rhythm signals.
-- Synthetic knowledge documents used as the approved local knowledge base.
-- A simple revenue-at-risk calculation based on affected systems and dependent contracts.
-- A local citation fallback for grounded answers.
-- A Foundry IQ adapter boundary that falls back locally until Azure resources are configured.
-- A local multi-agent simulation loop for seeded incident practice.
-- A branching timeline with parented decision nodes, cascade paths, revenue deltas, and contract exposure.
-- Local ignored session storage under `backend/.crisol_sessions/`.
-- A weighted competence report with cited evidence, skill gaps, certification alignment, and next best actions.
-- A no-PII manager fragility map over saved synthetic sessions.
-- A Next.js War-Room dashboard for running simulations, viewing the timeline, reading reports, and showing manager aggregate risk.
-- A streaming scenario endpoint for live playback in the War-Room.
-- Azure Speech synthesis for NPC reactions when configured.
-- Per-session MP3 caching under ignored local storage at `backend/.crisol_audio/`.
-- A safe text-only fallback when Speech credentials, SDK support, or synthesis are unavailable.
-- A frontend Playback Director that buffers SSE intake and deliberately advances visible events.
-- Pause, resume, replay, and `0.75x`, `1x`, and `1.25x` playback controls.
-- Animated 2D/2.5D persona cards for VP Operations, Product Manager, Database Lead, and Support Lead.
-- A six-tool CRISOL MCP server backed by the same simulation, replay, reporting, and manager services.
-- A Microsoft Learn MCP adapter with bounded timeouts and synthetic local fallback.
-- Deterministic time-travel replay projections from saved decision nodes.
-- A five-pack Scenario Library with import and sensitive-content validation.
-- Evaluation checks for groundedness, citations, safety, tools, replay, voice fallback, and product language.
-- Structured local telemetry under ignored storage.
-- A production backend container and operational deployment guidance.
+## Architecture
 
-The backend exposes:
+CRISOL uses a Next.js War Room and a FastAPI service. The backend combines a NetworkX ontology, a deterministic scenario director, consequence and scoring services, local ignored session storage, replay projection, speech synthesis, MCP tools, evaluation checks, and allowlisted telemetry.
 
-- `GET /health`
-- `GET /ontology/summary`
-- `GET /ontology/revenue-at-risk?systems=SVC-checkout`
-- `GET /grounding/test?q=checkout%20outage%20database%20recovery`
-- `GET /scenario/run?role_id=ROLE-SRE`
-- `GET /scenario/stream?role_id=ROLE-SRE`
-- `GET /voice/status`
-- `GET /voice/test?text=hello&persona=VP%20Operations`
-- `GET /scenario/run/timeline?role_id=ROLE-SRE`
-- `GET /scenario/sessions`
-- `GET /scenario/{session_id}`
-- `GET /scenario/{session_id}/timeline`
-- `GET /reports/competence/{session_id}`
-- `GET /reports/latest`
-- `GET /manager/fragility-map`
-- `GET /manager/readiness-summary`
-- `GET /mcp/tools`
-- `POST /mcp/demo`
-- `POST /replay/branch-from`
-- `GET /grounding/learn/test?q=AZ-400%20monitoring%20CI/CD`
-- `GET /grounding/learn/certification/{certification_id}`
-- `GET /scenarios`
-- `GET /scenarios/{scenario_id}`
-- `POST /scenarios/validate`
-- `POST /scenario/run-custom`
-- `GET /scenario/stream-custom`
-- `GET /eval/report`
-- `GET /telemetry/summary`
-- `GET /telemetry/events`
+```text
+Next.js War Room
+  -> FastAPI product API
+     -> Scenario Library and simulation director
+     -> Ontology and business-impact graph
+     -> Grounding and citation adapters
+     -> Competence and manager insights
+     -> Replay, MCP, voice, evaluation, telemetry
+     -> Ignored local runtime storage
+```
+
+Architecture details are documented in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
+## Microsoft Stack And IQ Integration
+
+- **Azure Speech** provides NPC voice synthesis when configured.
+- **Microsoft Learn MCP** provides live certification grounding with bounded local fallback.
+- **Foundry IQ** has an adapter boundary for approved knowledge retrieval; live indexing requires Azure configuration.
+- **Fabric IQ** maps to the local ontology boundary and depends on target capacity for a live adapter.
+- **Work IQ** uses sanitized local work-signal fixtures until connected to approved enterprise tenant signals.
+- **Azure Container Apps or App Service** are the recommended backend deployment targets.
+
+Every scored claim and grounded answer retains citations or returns a bounded fallback result.
 
 ## Scenario Library
 
-Scenario packs are manually authored, sanitized JSON under `backend/app/data/scenario_packs`. They can be validated and selected without editing runtime code:
+Scenario packs are manually authored JSON files under `backend/app/data/scenario_packs/`. Each pack declares fictional identifiers, role, industry, systems, personas, decisions, success criteria, failure modes, and knowledge references.
 
 ```powershell
 cd backend
 python -m app.scenarios.importer
-python -m app.validate_phase9
 ```
 
-The War-Room Scenario Library drives both one-shot and live simulation controls. See `docs/PRODUCT_SCENARIOS.md` for the authoring contract.
+The frontend selector drives both standard and live simulation runs. Authoring rules are in [docs/PRODUCT_SCENARIOS.md](docs/PRODUCT_SCENARIOS.md).
 
-## Evaluation And Telemetry
+## Azure Speech NPC Room
 
-Run the product-readiness evaluation:
+When `AZURE_SPEECH_KEY` and `AZURE_SPEECH_REGION` are available to the backend process, NPC reactions are synthesized and cached under ignored local runtime storage. Without valid configuration, the same scenario remains fully usable through synchronized text fallback.
 
-```powershell
-cd backend
-python -m app.eval.harness
-```
+Voice credentials stay server-side and are never returned to the browser.
 
-Lifecycle telemetry is written as allowlisted JSON lines under ignored `backend/.crisol_telemetry/`. It stores operational identifiers and metrics, not secrets, PII, or long raw inputs.
+## MCP Tool Surface
 
-## CRISOL MCP Server
+CRISOL exposes six local tools:
 
-CRISOL exposes six tools: `start_simulacrum`, `get_situation`, `make_decision`, `branch_from`, `get_competence_report`, and `get_manager_fragility_map`. The local registry is always available. When the `mcp` package is installed, the same functions are exposed through a `FastMCP` entrypoint for stdio, SSE, or streamable HTTP clients.
+- `start_simulacrum`
+- `get_situation`
+- `make_decision`
+- `branch_from`
+- `get_competence_report`
+- `get_manager_fragility_map`
 
 ```powershell
 cd backend
 python -m app.mcp_server.server --list-tools
-python -m app.mcp_server.server --demo
 python -m app.mcp_server.server --serve --transport stdio
 ```
 
-The MCP tools are implemented locally and can be wired to MCP clients. Tool behavior remains synthetic and uses the same cited CRISOL scenario engine as the web application.
-
-## Microsoft Learn MCP Adapter
-
-`app.grounding.learn_mcp` uses `LEARN_MCP_URL`, defaulting to `https://learn.microsoft.com/api/mcp`. It requires no authentication. A live response is labeled `learn-mcp`; network, protocol, or timeout failures return `local-fallback`.
-
-Fallback results are synthetic local guidance, not official certification documentation. Competence report alignment includes `source_mode` and `learn_context_available` so consumers can distinguish the source.
+The web product exposes the same contracts through its Tool Preview panel.
 
 ## Time-Travel Replay
 
-The replay service loads a saved session, preserves turns before a selected decision node, applies an alternative action, and deterministically simulates the remaining synthetic path. It returns score, final severity, peak revenue-at-risk, reasoning, and citations for both paths.
+Time-Travel Replay starts from a saved decision node, substitutes an alternative action, and re-simulates the remaining path. It compares competence score, severity, revenue at risk, reasoning, and citations.
 
-This is a **deterministic replay projection**, not an exact production rollback.
+Replay is a deterministic projection for training analysis. It is not an exact production rollback.
 
-## Microsoft IQ Integration Plan
+## Competence Score And Manager Fragility Map
 
-CRISOL uses an honest phased integration model:
+The Competence Score includes weighted dimensions, cited evidence, failure modes, skill gaps, certification alignment, and next actions. The Manager Fragility Map aggregates sanitized session evidence by role, dimension, skill, and certification without storing personal profiles.
 
-- Foundry IQ: Phase 2 adds the adapter skeleton and local citation fallback. Live indexing requires Azure project and search configuration.
-- Fabric IQ Ontology: Phase 1 uses a local NetworkX graph and a small adapter boundary so the ontology can later map to Fabric-backed entities.
-- Work IQ: Phase 1 uses synthetic work rhythm signals through local JSON data. Live signals are not implemented yet.
+These outputs support coaching and readiness planning. Human reviewers remain responsible for employment, access, certification, and operational decisions.
 
-Every grounded answer must include citations. If the approved synthetic knowledge base does not contain enough information, the backend returns a safe no-answer response instead of fabricating support.
+## Security And Data Policy
 
-## Synthetic Data Disclaimer
+- Repository scenarios and examples use sanitized or synthetic training data.
+- Real customer, employee, contact, payment, credential, and confidential incident data are prohibited.
+- `.env`, virtual environments, generated sessions, audio, telemetry, build output, and dependencies are ignored.
+- Telemetry accepts only an explicit field allowlist.
+- The repository scanner checks credentials, sensitive-data patterns, and product language.
+- CRISOL does not execute production control-plane actions.
 
-All Phase 1 data is synthetic demonstration data. Learner IDs, contract IDs, systems, scenarios, and documents are fabricated. Do not add real names, real emails, customer data, production telemetry, secrets, or personally identifiable information.
+See [docs/SECURITY.md](docs/SECURITY.md) and [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md).
 
-## Local Run Commands
+## Run Locally
 
-Backend checks:
-
-```powershell
-cd backend
-python -m app.scenarios.importer
-python -m app.eval.harness
-python -m app.validate_phase9
-python -m app.validate_phase8
-python -m app.validate_phase5
-python -m app.validate_phase7
-python -m app.validate_phase4
-python -m app.run_scenario --role ROLE-SRE
-python -m app.grounding.build_knowledge_base
-python -m app.grounding.test_grounding
-python -m app.ontology.load
-python -m app.mcp_server.server --list-tools
-python -m app.mcp_server.server --demo
-uvicorn app.main:app --reload
-```
-
-Browser demo:
-
-Terminal 1:
+Backend:
 
 ```powershell
 cd backend
+python -m pip install -r requirements.txt
 python -m uvicorn app.main:app --reload
 ```
 
-Terminal 2:
+Frontend:
 
 ```powershell
 cd frontend
@@ -182,102 +137,44 @@ npm install
 npm run dev
 ```
 
-Open:
+Open `http://localhost:3000`.
 
-```text
-http://localhost:3000
+Recording Mode is available in the command header. It preserves Scenario Library, live simulation, Azure Speech status, citations, revenue impact, timeline, Competence Score, Manager Fragility Map, Time-Travel Replay, and MCP tools while reducing technical recording noise.
+
+## Validation Commands
+
+```powershell
+cd backend
+python -m app.security.scan
+python -m app.validate_release
+python -m app.validate_phase9
+python -m app.validate_phase8
+python -m app.validate_phase7
+python -m app.validate_phase5
+python -m app.validate_phase4
+python -m app.maintenance.reset_local_state --seed-demo
 ```
 
-The War-Room includes:
-
-- `Run SRE Simulation`
-- `Play Live Simulation`
-- `Pause Playback` and `Resume Playback`
-- `Replay Session`
-- `0.75x`, `1x`, and `1.25x` speed controls
-- `Time-Travel Replay`
-- `CRISOL MCP Server`
-- `Scenario Library`
-- `Product Readiness`
-
-`Play Live Simulation` connects to `GET /scenario/stream?role_id=ROLE-SRE`. Stream intake and visible playback are separated: events can buffer immediately while the Playback Director advances the Event Rail, NPC stage, timeline, consequence metrics, competence score, coach plan, and manager snapshot in sequence. NPC reactions block progression until Azure Speech audio ends or reaches a safety timeout. Without valid Speech configuration, the same synchronized pacing uses the text-only fallback.
-
-The War-Room uses a high-density mission-control layout designed for 16:9 recording. Animated persona cards expose speaker state, pressure level, role, and status without requiring a full 3D engine. Side rails and report sections use bounded internal scrolling, while the decision graph uses fixed-size nodes, explicit handles, and a deterministic left-to-right Dagre layout that refits as timeline revisions arrive.
-
-## Azure Speech
-
-Azure Speech is the primary NPC voice layer. Configure these variables in the local ignored `.env` file or the process environment:
-
-```text
-AZURE_SPEECH_KEY=
-AZURE_SPEECH_REGION=
+```powershell
+cd frontend
+npm install
+npm run build
 ```
 
-Persona voices can be overridden with:
+## Deployment Notes
 
-```text
-AZURE_SPEECH_VOICE_VP=
-AZURE_SPEECH_VOICE_PM=
-AZURE_SPEECH_VOICE_DB=
-AZURE_SPEECH_VOICE_SUPPORT=
-```
+The backend includes a non-root Python container with a health check. Deployment guidance covers local production mode, Azure Container Apps, Azure App Service, secret stores, health probes, and MCP network controls.
 
-Generated MP3 files are cached per session under `backend/.crisol_audio/`. The directory is ignored and must not be committed. The Speech key is read only by the backend and is never returned to the frontend.
+- [Deployment guide](docs/DEPLOYMENT.md)
+- [Docker smoke test](docs/DOCKER_SMOKE_TEST.md)
+- [Release candidate report](docs/RELEASE_CANDIDATE_REPORT.md)
 
-After starting the server, open:
+## Screenshot Placeholders
 
-```text
-http://127.0.0.1:8000/health
-http://127.0.0.1:8000/ontology/summary
-http://127.0.0.1:8000/ontology/revenue-at-risk?systems=SVC-checkout
-http://127.0.0.1:8000/grounding/test?q=checkout%20outage%20database%20recovery
-http://127.0.0.1:8000/scenario/run?role_id=ROLE-SRE
-http://127.0.0.1:8000/scenario/stream?role_id=ROLE-SRE
-http://127.0.0.1:8000/voice/status
-http://127.0.0.1:8000/voice/test?text=Checkout%20is%20down%20and%20revenue%20is%20at%20risk&persona=VP%20Operations
-http://127.0.0.1:8000/scenario/run/timeline?role_id=ROLE-SRE
-http://127.0.0.1:8000/scenario/sessions
-http://127.0.0.1:8000/reports/latest
-http://127.0.0.1:8000/manager/fragility-map
-http://127.0.0.1:8000/manager/readiness-summary
-http://127.0.0.1:8000/mcp/tools
-http://127.0.0.1:8000/grounding/learn/test?q=AZ-400%20monitoring%20CI/CD
-http://127.0.0.1:8000/grounding/learn/certification/AZ-400
-```
+Capture these release images after running a clean seeded baseline:
 
-## Phase Status
-
-- [x] Pre-flight setup files exist.
-- [x] Local `.env` is ignored.
-- [x] Phase 1 backend scaffold.
-- [x] Synthetic ontology data.
-- [x] Ontology graph loader.
-- [x] Revenue-at-risk endpoint.
-- [x] Health endpoint.
-- [x] Phase 2 local citation fallback.
-- [x] Phase 2 Foundry IQ adapter skeleton.
-- [x] Phase 3 deterministic terminal simulation loop.
-- [x] Phase 3 scenario run API endpoint.
-- [x] Phase 4 branching timeline.
-- [x] Phase 4 local session replay storage.
-- [x] Phase 4 validation script.
-- [x] Phase 5 scored competence report.
-- [x] Phase 5 manager fragility map.
-- [x] Phase 5 validation script.
-- [x] Phase 6 War-Room frontend.
-- [x] Phase 7 SSE live playback.
-- [x] Phase 7 optional speech fallback.
-- [x] Phase 7.2 Azure Speech synthesis and queued NPC playback.
-- [x] Phase 7.3 synchronized Playback Director.
-- [x] Phase 7.3 premium mission-control UI and animated NPC stage.
-- [x] Phase 7.4 bounded War-Room layout and deterministic decision graph.
-- [x] Phase 8 CRISOL MCP server and local tool registry.
-- [x] Phase 8 Microsoft Learn MCP adapter with safe local fallback.
-- [x] Phase 8 deterministic time-travel replay projection.
-- [x] Phase 8 replay and MCP War-Room panels.
-- [x] Phase 9 sanitized Scenario Library and custom streaming.
-- [x] Phase 9 evaluation, safety, groundedness, and citation harness.
-- [x] Phase 9 structured local telemetry and optional tracing.
-- [x] Phase 9 product language and operational boundary polish.
-- [x] Phase 9 Docker and production readiness documentation.
-- [ ] Live Foundry IQ indexing and retrieval.
+1. War Room in Recording Mode with Scenario Library and Azure Speech status.
+2. Live branching timeline with revenue delta and cited events.
+3. Competence Score beside the Manager Fragility Map.
+4. Time-Travel Replay branch comparison.
+5. MCP Tool Preview with the six-tool registry.

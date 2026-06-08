@@ -10,6 +10,7 @@ import {
   Radio,
   RotateCcw,
   ShieldCheck,
+  Video,
   Volume2,
   VolumeX,
 } from "lucide-react";
@@ -43,6 +44,7 @@ export function WarRoom() {
     selectedScenarioId,
     voiceStatus,
     voiceEnabled,
+    displayMode,
     receivedEvents,
     liveEvents,
     activeEvent,
@@ -60,6 +62,7 @@ export function WarRoom() {
     replaySession,
     setPlaybackSpeed,
     toggleVoice,
+    toggleRecordingMode,
   } = useWarRoomStore();
 
   useEffect(() => {
@@ -91,7 +94,10 @@ export function WarRoom() {
     : currentTurn?.turn_number;
 
   return (
-    <main className="war-room-shell">
+    <main
+      className={`war-room-shell ${displayMode === "recording" ? "recording-mode" : ""}`}
+      data-display-mode={displayMode}
+    >
       <header className="command-header">
         <div className="command-brand">
           <div className="brand-mark">
@@ -140,6 +146,19 @@ export function WarRoom() {
           >
             <Radio className="h-4 w-4" />
             Play Live Simulation
+          </button>
+          <button
+            onClick={toggleRecordingMode}
+            className={
+              displayMode === "recording"
+                ? "control-button recording-toggle recording-toggle-active"
+                : "control-button recording-toggle"
+            }
+            aria-pressed={displayMode === "recording"}
+            title="Toggle Recording Mode"
+          >
+            <Video className="h-4 w-4" />
+            Recording Mode
           </button>
           {playbackStatus === "paused" ? (
             <button onClick={resumePlayback} className="icon-control" title="Resume Playback">
@@ -207,6 +226,7 @@ export function WarRoom() {
             bufferedCount={bufferedCount}
             progress={playbackProgress}
             readiness={readinessSummary?.average_score}
+            recordingMode={displayMode === "recording"}
           />
           <LiveEventRail
             events={liveEvents}
@@ -277,6 +297,7 @@ type SessionSummaryProps = {
   bufferedCount: number;
   progress: number;
   readiness?: number;
+  recordingMode: boolean;
 };
 
 function SessionSummary({
@@ -288,6 +309,7 @@ function SessionSummary({
   bufferedCount,
   progress,
   readiness,
+  recordingMode,
 }: SessionSummaryProps) {
   return (
     <section className="war-panel session-summary-panel p-4">
@@ -302,14 +324,14 @@ function SessionSummary({
       </div>
       <dl className="space-y-3 text-xs">
         <SummaryRow label="Role" value={roleId ?? "ROLE-SRE"} />
-        <SummaryRow label="Stream intake" value={streamStatus} />
+        {!recordingMode && <SummaryRow label="Stream intake" value={streamStatus} />}
         <SummaryRow label="Playback" value={playbackStatus} />
-        <SummaryRow label="Buffered events" value={String(bufferedCount)} />
+        {!recordingMode && <SummaryRow label="Buffered events" value={String(bufferedCount)} />}
         <SummaryRow label="Team readiness" value={readiness ? readiness.toFixed(1) : "Pending"} />
       </dl>
       <div className="mt-4">
         <div className="mb-2 flex items-center justify-between text-[10px] uppercase text-slate-500">
-          <span>Synchronized progress</span>
+          <span>{recordingMode ? "Scenario progress" : "Synchronized progress"}</span>
           <span>{progress}%</span>
         </div>
         <div className="h-1.5 overflow-hidden rounded-full bg-white/5">
@@ -320,7 +342,9 @@ function SessionSummary({
           />
         </div>
       </div>
-      {sessionId && <p className="mt-4 truncate font-mono text-[10px] text-slate-600">{sessionId}</p>}
+      {sessionId && !recordingMode && (
+        <p className="mt-4 truncate font-mono text-[10px] text-slate-600">{sessionId}</p>
+      )}
     </section>
   );
 }
