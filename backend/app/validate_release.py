@@ -36,6 +36,7 @@ VALIDATION_MODULES = (
 )
 REQUIRED_ENDPOINTS = {
     "/health",
+    "/debug/cors",
     "/scenarios",
     "/scenarios/{scenario_id}",
     "/scenarios/validate",
@@ -103,6 +104,7 @@ def run_release_validation() -> dict[str, Any]:
     checks.extend(
         [
             _endpoint_registry_check(),
+            _cors_configuration_check(),
             _scenario_library_check(),
             _telemetry_check(),
             _mcp_tools_check(),
@@ -187,6 +189,87 @@ def _endpoint_registry_check() -> dict[str, Any]:
         else "Required product endpoints are missing.",
         {"registered_count": len(registered), "missing": missing},
         "Restore every required release endpoint." if missing else None,
+    )
+
+
+def _cors_configuration_check() -> dict[str, Any]:
+    import warnings
+
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore",
+            message="Using `httpx` with `starlette.testclient` is deprecated.*",
+        )
+        from fastapi.testclient import TestClient
+
+    from app.main import (
+        AZURE_CONTAINER_APPS_ORIGIN_REGEX,
+        LOCAL_DEVELOPMENT_ORIGINS,
+        app,
+        build_allowed_origins,
+    )
+
+    parsed = build_allowed_origins(
+        " https://frontend.example.test/ ",
+        (
+            "https://one.example.test/, https://two.example.test, , "
+            "https://one.example.test"
+        ),
+    )
+    expected_parsed = [
+        *LOCAL_DEVELOPMENT_ORIGINS,
+        "https://frontend.example.test",
+        "https://one.example.test",
+        "https://two.example.test",
+    ]
+    azure_origin = "https://crisol-web.example.eastus.azurecontainerapps.io"
+    client = TestClient(app)
+    get_response = client.get("/health", headers={"Origin": azure_origin})
+    preflight_response = client.options(
+        "/health",
+        headers={
+            "Origin": azure_origin,
+            "Access-Control-Request-Method": "GET",
+        },
+    )
+    debug_response = client.get("/debug/cors")
+    valid = bool(
+        parsed == expected_parsed
+        and AZURE_CONTAINER_APPS_ORIGIN_REGEX
+        == r"https://.*\.azurecontainerapps\.io"
+        and get_response.headers.get("access-control-allow-origin") == azure_origin
+        and get_response.headers.get("access-control-allow-credentials") == "true"
+        and preflight_response.status_code == 200
+        and preflight_response.headers.get("access-control-allow-origin")
+        == azure_origin
+        and debug_response.status_code == 200
+        and set(debug_response.json())
+        == {
+            "frontend_url",
+            "allowed_origins",
+            "allow_origin_regex",
+            "environment",
+        }
+    )
+    return _check(
+        "cors_configuration",
+        "pass" if valid else "fail",
+        "CORS accepts normalized configured origins and Azure Container Apps domains."
+        if valid
+        else "CORS origin parsing or Azure Container Apps response headers are invalid.",
+        {
+            "parsed_origins": parsed,
+            "azure_origin": azure_origin,
+            "get_allow_origin": get_response.headers.get(
+                "access-control-allow-origin"
+            ),
+            "preflight_allow_origin": preflight_response.headers.get(
+                "access-control-allow-origin"
+            ),
+        },
+        "Repair environment-based CORS parsing and middleware configuration."
+        if not valid
+        else None,
     )
 
 

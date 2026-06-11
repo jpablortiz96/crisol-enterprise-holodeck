@@ -73,17 +73,50 @@ from app.workspace.templates import scenario_template_catalog, workspace_templat
 from app.workspace.walkthrough import workspace_walkthrough
 
 
+LOCAL_DEVELOPMENT_ORIGINS = (
+    "http://localhost:3000",
+    "http://localhost:3001",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:3001",
+)
+AZURE_CONTAINER_APPS_ORIGIN_REGEX = r"https://.*\.azurecontainerapps\.io"
+
+
+def normalize_origin(value: str | None) -> str:
+    return (value or "").strip().rstrip("/")
+
+
+def build_allowed_origins(
+    frontend_url: str | None = None,
+    allowed_origins: str | None = None,
+) -> list[str]:
+    candidates = [
+        *LOCAL_DEVELOPMENT_ORIGINS,
+        normalize_origin(frontend_url),
+        *(
+            normalize_origin(origin)
+            for origin in (allowed_origins or "").split(",")
+        ),
+    ]
+    return list(dict.fromkeys(origin for origin in candidates if origin))
+
+
+FRONTEND_URL = normalize_origin(os.getenv("FRONTEND_URL"))
+ALLOWED_ORIGINS = build_allowed_origins(
+    FRONTEND_URL,
+    os.getenv("ALLOWED_ORIGINS"),
+)
+APP_ENVIRONMENT = (
+    os.getenv("ENVIRONMENT")
+    or os.getenv("APP_ENV")
+    or "development"
+).strip() or "development"
+
 app = FastAPI(title="CRISOL Backend", version="1.0.0-rc.2")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        "http://localhost:3001",
-        "http://127.0.0.1:3001",
-        "http://localhost:3002",
-        "http://127.0.0.1:3002",
-    ],
+    allow_origins=ALLOWED_ORIGINS,
+    allow_origin_regex=AZURE_CONTAINER_APPS_ORIGIN_REGEX,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -100,6 +133,16 @@ def health() -> dict[str, str]:
         "status": "ok",
         "service": "crisol-backend",
         "phase": "10.3-workspace-packaging",
+    }
+
+
+@app.get("/debug/cors")
+def debug_cors() -> dict[str, str | list[str]]:
+    return {
+        "frontend_url": FRONTEND_URL,
+        "allowed_origins": ALLOWED_ORIGINS,
+        "allow_origin_regex": AZURE_CONTAINER_APPS_ORIGIN_REGEX,
+        "environment": APP_ENVIRONMENT,
     }
 
 
