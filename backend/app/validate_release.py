@@ -1,6 +1,5 @@
 import argparse
 import json
-import os
 import shutil
 import subprocess
 import sys
@@ -31,12 +30,14 @@ VALIDATION_MODULES = (
     ("phase7", "app.validate_phase7"),
     ("phase8", "app.validate_phase8"),
     ("phase9", "app.validate_phase9"),
+    ("foundry_iq", "app.validate_foundry_iq"),
     ("scenario_importer", "app.scenarios.importer"),
     ("evaluation_harness", "app.eval.harness"),
 )
 REQUIRED_ENDPOINTS = {
     "/health",
     "/debug/cors",
+    "/grounding/status",
     "/scenarios",
     "/scenarios/{scenario_id}",
     "/scenarios/validate",
@@ -541,18 +542,31 @@ def _docker_smoke_support_check() -> dict[str, Any]:
 
 
 def _external_integration_check() -> dict[str, Any]:
-    configured = bool(
-        os.getenv("AZURE_AI_PROJECT_ENDPOINT") and os.getenv("AZURE_SEARCH_ENDPOINT")
-    )
+    from app.grounding.status import get_grounding_status
+
+    grounding_status = get_grounding_status()
+    fully_configured = grounding_status["mode"] == "live-foundry-iq"
     return _check(
         "external_integration_readiness",
-        "pass" if configured else "warn",
-        "Live IQ integration variables are present in the process environment."
-        if configured
-        else "Live IQ adapters require deployment-environment verification.",
-        {"foundry_and_search_configured": configured},
-        "Validate Foundry IQ, Fabric IQ, and Work IQ adapters in the target Azure environment."
-        if not configured
+        "pass" if fully_configured else "warn",
+        "Foundry project, model deployment, and Azure Search are configured."
+        if fully_configured
+        else "Grounding is available with reduced cloud readiness or local fallback.",
+        {
+            "grounding_mode": grounding_status["mode"],
+            "foundry_project_configured": grounding_status[
+                "foundry_project_configured"
+            ],
+            "model_deployment_configured": grounding_status[
+                "model_deployment_configured"
+            ],
+            "azure_search_configured": grounding_status[
+                "azure_search_configured"
+            ],
+            "search_index": grounding_status["search_index"],
+        },
+        "Configure the missing grounding variables and run python -m app.validate_foundry_iq."
+        if not fully_configured
         else None,
     )
 

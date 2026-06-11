@@ -5,6 +5,7 @@ import {
   apiAssetUrl,
   branchFromSession,
   getFragilityMap,
+  getGroundingStatus,
   getHealth,
   getLatestReport,
   getMcpTools,
@@ -42,6 +43,7 @@ import type {
   CompetenceReport,
   ConsequenceDelta,
   HealthResponse,
+  GroundingStatus,
   DisplayMode,
   ManagerFragilityMap,
   McpDemoResponse,
@@ -75,6 +77,7 @@ import type {
 type WarRoomState = {
   activeSection: AppSection;
   health: HealthResponse | null;
+  groundingStatus: GroundingStatus | null;
   session: SimulationRun | null;
   latestSession: SimulationRun | null;
   latestReport: CompetenceReport | null;
@@ -192,6 +195,7 @@ export const useWarRoomStore = create<WarRoomState>((set, get) => {
   return {
     activeSection: "command-center",
     health: null,
+    groundingStatus: null,
     session: null,
     latestSession: null,
     latestReport: null,
@@ -233,6 +237,7 @@ export const useWarRoomStore = create<WarRoomState>((set, get) => {
       try {
         const [
           health,
+          groundingStatus,
           latestReport,
           readinessSummary,
           fragilityMap,
@@ -249,6 +254,7 @@ export const useWarRoomStore = create<WarRoomState>((set, get) => {
           workspaceTemplates,
         ] = await Promise.allSettled([
           getHealth(),
+          getGroundingStatus(),
           getLatestReport(),
           getReadinessSummary(),
           getFragilityMap(),
@@ -268,6 +274,10 @@ export const useWarRoomStore = create<WarRoomState>((set, get) => {
 
         set({
           health: health.status === "fulfilled" ? health.value : null,
+          groundingStatus:
+            groundingStatus.status === "fulfilled"
+              ? groundingStatus.value
+              : null,
           latestReport: latestReport.status === "fulfilled" ? latestReport.value : null,
           readinessSummary: readinessSummary.status === "fulfilled" ? readinessSummary.value : null,
           fragilityMap: fragilityMap.status === "fulfilled" ? fragilityMap.value : null,

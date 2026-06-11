@@ -7,6 +7,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.grounding.foundry_iq import grounded_answer
 from app.grounding.learn_mcp import certification_context, search_learn_docs
+from app.grounding.status import get_grounding_status
 from app.eval.harness import run_eval_suite
 from app.insights.manager import build_fragility_map
 from app.mcp_server.tools import list_registered_tools, run_local_demo
@@ -172,7 +173,13 @@ def grounding_test(q: str = Query(..., min_length=1)) -> dict:
         "answer": result["answer"],
         "citations": result["citations"],
         "mode": result["mode"],
+        "grounding_mode": result["grounding_mode"],
     }
+
+
+@app.get("/grounding/status")
+def grounding_status() -> dict:
+    return get_grounding_status()
 
 
 @app.get("/grounding/learn/test")

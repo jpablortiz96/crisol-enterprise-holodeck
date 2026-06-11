@@ -1,12 +1,12 @@
 "use client";
 
-import { Activity, Database, Radio, Server, ShieldCheck } from "lucide-react";
+import { Activity, Cloud, Database, Radio, Server, ShieldCheck } from "lucide-react";
 import { McpToolsPanel } from "@/components/McpToolsPanel";
 import { ProductReadinessPanel } from "@/components/ProductReadinessPanel";
 import { useWarRoomStore } from "@/store/warRoomStore";
 
 export function ToolsReadinessPage() {
-  const { health, voiceStatus, telemetrySummary, mcpTools } = useWarRoomStore();
+  const { health, groundingStatus, voiceStatus, telemetrySummary, mcpTools } = useWarRoomStore();
 
   return (
     <section className="product-page">
@@ -30,6 +30,25 @@ export function ToolsReadinessPage() {
         <McpToolsPanel />
       </div>
 
+      <section className="war-panel grounding-status-panel">
+        <div className="panel-header">
+          <div><p className="panel-kicker">Knowledge retrieval</p><h2 className="panel-title">Grounding Status</h2></div>
+          <Cloud className="h-5 w-5" />
+        </div>
+        <div className="telemetry-detail-grid">
+          <GroundingMetric label="Mode" value={groundingStatus?.mode ?? "Unavailable"} />
+          <GroundingMetric label="Foundry project" value={yesNo(groundingStatus?.foundry_project_configured)} />
+          <GroundingMetric label="Model deployment" value={yesNo(groundingStatus?.model_deployment_configured)} />
+          <GroundingMetric label="Azure Search" value={yesNo(groundingStatus?.azure_search_configured)} />
+          <GroundingMetric label="Search index" value={groundingStatus?.search_index || "Not configured"} />
+        </div>
+        {groundingStatus?.warnings.length ? (
+          <ul className="grounding-warning-list">
+            {groundingStatus.warnings.map((warning) => <li key={warning}>{warning}</li>)}
+          </ul>
+        ) : null}
+      </section>
+
       <section className="war-panel telemetry-detail-panel">
         <div className="panel-header">
           <div><p className="panel-kicker">Allowlisted telemetry</p><h2 className="panel-title">Telemetry Summary</h2></div>
@@ -43,6 +62,15 @@ export function ToolsReadinessPage() {
       </section>
     </section>
   );
+}
+
+function GroundingMetric({ label, value }: { label: string; value: string }) {
+  return <div><span>{label}</span><strong>{value}</strong></div>;
+}
+
+function yesNo(value: boolean | undefined): string {
+  if (value === undefined) return "Unavailable";
+  return value ? "Yes" : "No";
 }
 
 function AdminStatus({ icon: Icon, label, value, ready }: { icon: typeof Server; label: string; value: string; ready: boolean }) {

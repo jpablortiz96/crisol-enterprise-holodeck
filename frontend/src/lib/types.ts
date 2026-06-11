@@ -12,6 +12,15 @@ export type HealthResponse = {
   phase: string;
 };
 
+export type GroundingStatus = {
+  mode: "live-foundry-iq" | "live-azure-search" | "local-fallback";
+  foundry_project_configured: boolean;
+  model_deployment_configured: boolean;
+  azure_search_configured: boolean;
+  search_index: string;
+  warnings: string[];
+};
+
 export type ScenarioSummary = {
   scenario_id: string;
   title: string;

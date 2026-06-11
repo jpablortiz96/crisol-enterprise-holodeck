@@ -146,8 +146,18 @@ def _answer_from_chunks(query: str, chunks: list[dict[str, Any]]) -> str:
     return " ".join(snippets)
 
 
-def answer_with_citations(query: str, top_k: int = 5) -> dict[str, Any]:
-    chunks = search_knowledge(query, top_k=top_k)
+def answer_with_citations(
+    query: str,
+    top_k: int = 5,
+    data_dir: Path | None = None,
+) -> dict[str, Any]:
+    chunks = search_knowledge(query, top_k=top_k, data_dir=data_dir)
+    if not chunks and data_dir is None:
+        chunks = search_knowledge(
+            query,
+            top_k=top_k,
+            data_dir=DEFAULT_KNOWLEDGE_DIR,
+        )
     citations = [
         {
             "doc_id": chunk["doc_id"],

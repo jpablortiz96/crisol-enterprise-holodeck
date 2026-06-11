@@ -43,6 +43,7 @@ class GroundingTestResponse(BaseModel):
     answer: str
     citations: list[Citation]
     mode: str
+    grounding_mode: str
 
 
 class ScenarioOption(BaseModel):

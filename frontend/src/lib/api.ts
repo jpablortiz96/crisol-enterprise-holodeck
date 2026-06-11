@@ -1,5 +1,6 @@
 import type {
   CompetenceReport,
+  GroundingStatus,
   HealthResponse,
   ManagerFragilityMap,
   McpDemoResponse,
@@ -222,6 +223,10 @@ export function getReadinessSummary(): Promise<ReadinessSummary> {
 
 export function getHealth(): Promise<HealthResponse> {
   return request<HealthResponse>("/health");
+}
+
+export function getGroundingStatus(): Promise<GroundingStatus> {
+  return request<GroundingStatus>("/grounding/status");
 }
 
 export function getVoiceStatus(): Promise<VoiceStatusResponse> {
