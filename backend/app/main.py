@@ -13,7 +13,12 @@ from app.mcp_server.tools import list_registered_tools, run_local_demo
 from app.ontology.graph import affected_systems, load_ontology, revenue_at_risk, summarize_graph
 from app.orchestration.turn_loop import run_simulation
 from app.replay.time_travel import branch_from_session
-from app.scenarios.library import get_scenario, list_scenarios
+from app.scenarios.library import (
+    get_scenario,
+    list_scenarios,
+    list_workspace_scenarios,
+    save_workspace_scenario,
+)
 from app.scenarios.validators import validate_no_sensitive_content, validate_scenario_pack
 from app.scoring.competence_report import generate_competence_report
 from app.schemas import (
@@ -42,9 +47,33 @@ from app.voice.speech import (
     is_speech_configured,
     synthesize_npc_line,
 )
+from app.workspace.config import (
+    configure_organization,
+    disable_examples,
+    enable_examples,
+    workspace_status,
+)
+from app.workspace.setup import (
+    apply_creator_operations_template,
+    apply_eduky_template,
+    apply_workspace_template,
+    setup_empty_workspace,
+)
+from app.workspace.storage import (
+    list_knowledge_documents,
+    list_profiles,
+    list_roles,
+    list_skills,
+    save_knowledge_document,
+    save_profile,
+    save_role,
+    save_skill,
+)
+from app.workspace.templates import scenario_template_catalog, workspace_template_catalog
+from app.workspace.walkthrough import workspace_walkthrough
 
 
-app = FastAPI(title="CRISOL Backend", version="1.0.0-rc.1")
+app = FastAPI(title="CRISOL Backend", version="1.0.0-rc.2")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -52,6 +81,8 @@ app.add_middleware(
         "http://127.0.0.1:3000",
         "http://localhost:3001",
         "http://127.0.0.1:3001",
+        "http://localhost:3002",
+        "http://127.0.0.1:3002",
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -68,7 +99,7 @@ def health() -> dict[str, str]:
     return {
         "status": "ok",
         "service": "crisol-backend",
-        "phase": "10-release-candidate",
+        "phase": "10.3-workspace-packaging",
     }
 
 
@@ -122,6 +153,135 @@ def mcp_tools() -> dict:
 @app.post("/mcp/demo")
 def mcp_demo() -> dict:
     return run_local_demo()
+
+
+@app.get("/workspace/status")
+def workspace_status_endpoint() -> dict:
+    return workspace_status()
+
+
+@app.post("/workspace/initialize-empty")
+def workspace_initialize_empty() -> dict:
+    return setup_empty_workspace()
+
+
+@app.post("/workspace/enable-examples")
+def workspace_enable_examples() -> dict:
+    return enable_examples()
+
+
+@app.post("/workspace/disable-examples")
+def workspace_disable_examples() -> dict:
+    return disable_examples()
+
+
+@app.post("/workspace/apply-template/eduky")
+def workspace_apply_eduky_template() -> dict:
+    return apply_eduky_template()
+
+
+@app.post("/workspace/apply-template/creator-operations")
+def workspace_apply_creator_operations_template() -> dict:
+    return apply_creator_operations_template()
+
+
+@app.post("/workspace/apply-template/{template_id}")
+def workspace_apply_template(template_id: str) -> dict:
+    try:
+        return apply_workspace_template(template_id)
+    except ValueError as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+
+
+@app.get("/workspace/walkthrough")
+def workspace_walkthrough_endpoint() -> dict:
+    return workspace_walkthrough()
+
+
+@app.post("/workspace/configure-organization")
+def workspace_configure_organization(organization: dict = Body(...)) -> dict:
+    try:
+        return configure_organization(organization)
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+
+
+@app.get("/workspace/knowledge")
+def workspace_knowledge() -> list[dict]:
+    return list_knowledge_documents()
+
+
+@app.post("/workspace/knowledge")
+def workspace_save_knowledge(document: dict = Body(...)) -> dict:
+    try:
+        return save_knowledge_document(
+            str(document.get("file_name", "")),
+            str(document.get("content", "")),
+        )
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+
+
+@app.get("/workspace/roles")
+def workspace_roles() -> list[dict]:
+    return list_roles()
+
+
+@app.post("/workspace/roles")
+def workspace_save_role(role: dict = Body(...)) -> dict:
+    try:
+        return save_role(role)
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+
+
+@app.get("/workspace/skills")
+def workspace_skills() -> list[dict]:
+    return list_skills()
+
+
+@app.post("/workspace/skills")
+def workspace_save_skill(skill: dict = Body(...)) -> dict:
+    try:
+        return save_skill(skill)
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+
+
+@app.get("/workspace/profiles")
+def workspace_profiles() -> list[dict]:
+    return list_profiles()
+
+
+@app.post("/workspace/profiles")
+def workspace_save_profile(profile: dict = Body(...)) -> dict:
+    try:
+        return save_profile(profile)
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+
+
+@app.get("/workspace/scenarios")
+def workspace_scenarios() -> list[dict]:
+    return list_workspace_scenarios()
+
+
+@app.post("/workspace/scenarios")
+def workspace_save_scenario(pack: dict = Body(...)) -> dict:
+    try:
+        return save_workspace_scenario(pack)
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+
+
+@app.get("/workspace/templates")
+def workspace_templates() -> list[dict]:
+    return workspace_template_catalog()
+
+
+@app.get("/workspace/scenario-templates")
+def workspace_scenario_templates() -> list[dict]:
+    return scenario_template_catalog()
 
 
 @app.get("/scenarios")
@@ -220,7 +380,10 @@ def replay_branch_from(request: BranchFromRequest) -> dict:
 
 @app.get("/scenario/run", response_model=SimulationRunResponse)
 def scenario_run(role_id: str = Query(default="ROLE-SRE")) -> dict:
-    return run_simulation(role_id=role_id, auto_mode=True)
+    try:
+        return run_simulation(role_id=role_id, auto_mode=True)
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
 
 
 @app.get("/scenario/stream")
@@ -246,7 +409,7 @@ def voice_status() -> dict:
 @app.get("/voice/test", response_model=VoiceSynthesisResult)
 def voice_test(
     text: str = Query(default="hello", min_length=1, max_length=450),
-    persona: str = Query(default="VP Operations", min_length=1, max_length=80),
+    persona: str = Query(default="Operations Lead", min_length=1, max_length=80),
 ) -> dict:
     return synthesize_npc_line(
         text,
@@ -258,7 +421,10 @@ def voice_test(
 
 @app.get("/scenario/run/timeline", response_model=TimelineResponse)
 def scenario_run_timeline(role_id: str = Query(default="ROLE-SRE")) -> dict:
-    return run_simulation(role_id=role_id, auto_mode=True)["timeline"]
+    try:
+        return run_simulation(role_id=role_id, auto_mode=True)["timeline"]
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
 
 
 @app.get("/scenario/sessions", response_model=list[SavedSessionSummary])

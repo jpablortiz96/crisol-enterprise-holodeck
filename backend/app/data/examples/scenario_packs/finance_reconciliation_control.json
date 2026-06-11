@@ -1,0 +1,68 @@
+{
+  "scenario_id": "SCN-FIN-001",
+  "title": "Reconciliation control and approval workflow recovery",
+  "industry": "Financial operations",
+  "role_id": "ROLE-CLOUD",
+  "difficulty": "advanced",
+  "estimated_minutes": 10,
+  "data_classification": "sanitized-training",
+  "business_context": "A fictional reconciliation workflow shows mismatched ledger totals while an approval window is approaching.",
+  "systems": ["SVC-ledger", "SVC-db", "SVC-payments"],
+  "initial_stakes": "A control break could allow incomplete reconciliation evidence into an approval workflow.",
+  "personas": [
+    {"persona": "Finance Control Lead", "role": "Control owner", "communication_style": "precise", "pressure_profile": "high"},
+    {"persona": "Data Lead", "role": "Ledger evidence owner", "communication_style": "technical", "pressure_profile": "medium"},
+    {"persona": "VP Operations", "role": "Executive oversight", "communication_style": "urgent", "pressure_profile": "medium"}
+  ],
+  "turns": [
+    {
+      "turn_id": "T1",
+      "situation": "Ledger totals and settlement summaries diverge inside the approval window.",
+      "options": [
+        {"id": "OPT-FIN-1A", "label": "Freeze approval workflow and preserve evidence", "description": "Stop approvals while isolating the reconciliation boundary.", "action_type": "freeze_db_writes", "competencies": ["SK-database-recovery", "SK-escalation-judgment"], "risk_effect": "decrease", "expected_outcome": "The control break is contained before incomplete evidence is approved."},
+        {"id": "OPT-FIN-1B", "label": "Approve using the latest available total", "description": "Continue the workflow before resolving the mismatch.", "action_type": "custom_fin_approve", "competencies": ["SK-communication"], "risk_effect": "increase", "expected_outcome": "An unsupported total enters the approval chain."}
+      ],
+      "evaluation_focus": ["SK-database-recovery", "SK-escalation-judgment"]
+    },
+    {
+      "turn_id": "T2",
+      "situation": "The mismatch is isolated to a bounded settlement batch and its downstream ledger entries.",
+      "options": [
+        {"id": "OPT-FIN-2A", "label": "Correlate batch, ledger, and payment evidence", "description": "Trace the mismatch across the affected control chain.", "action_type": "correlate_observability", "competencies": ["SK-observability", "SK-data-engineering"], "risk_effect": "decrease", "expected_outcome": "The team identifies the exact reconciliation gap."},
+        {"id": "OPT-FIN-2B", "label": "Rebuild the full ledger period", "description": "Expand recovery beyond the isolated batch.", "action_type": "custom_fin_rebuild", "competencies": ["SK-data-engineering"], "risk_effect": "increase", "expected_outcome": "The control window widens and evidence becomes harder to compare."}
+      ],
+      "evaluation_focus": ["SK-observability", "SK-data-engineering"]
+    },
+    {
+      "turn_id": "T3",
+      "situation": "The control owner needs a recovery decision and independent validation owner.",
+      "options": [
+        {"id": "OPT-FIN-3A", "label": "Escalate with separated recovery and approval owners", "description": "Assign distinct accountability for correction and control validation.", "action_type": "escalate_incident_command", "competencies": ["SK-communication", "SK-escalation-judgment"], "risk_effect": "decrease", "expected_outcome": "The approval workflow retains independent oversight."},
+        {"id": "OPT-FIN-3B", "label": "Let the recovery owner approve the result", "description": "Combine correction and approval accountability.", "action_type": "custom_fin_same_owner", "competencies": ["SK-communication"], "risk_effect": "increase", "expected_outcome": "Control independence is weakened."}
+      ],
+      "evaluation_focus": ["SK-communication", "SK-escalation-judgment"]
+    },
+    {
+      "turn_id": "T4",
+      "situation": "The affected batch is corrected and reconciliation evidence must be retested.",
+      "options": [
+        {"id": "OPT-FIN-4A", "label": "Re-run reconciliation and compare control totals", "description": "Validate source, ledger, and settlement totals before approval.", "action_type": "custom_fin_validate", "competencies": ["SK-data-engineering", "SK-observability"], "risk_effect": "decrease", "expected_outcome": "The corrected batch passes an evidence-based control check."},
+        {"id": "OPT-FIN-4B", "label": "Use the corrected ledger total alone", "description": "Skip independent source and settlement comparison.", "action_type": "custom_fin_single_total", "competencies": ["SK-data-engineering"], "risk_effect": "increase", "expected_outcome": "The control remains incomplete despite a plausible ledger total."}
+      ],
+      "evaluation_focus": ["SK-data-engineering", "SK-observability"]
+    },
+    {
+      "turn_id": "T5",
+      "situation": "All control totals agree and the approval workflow can resume.",
+      "options": [
+        {"id": "OPT-FIN-5A", "label": "Resume approvals with a monitored control checkpoint", "description": "Restore the workflow and verify the next reconciliation cycle.", "action_type": "gradual_restore", "competencies": ["SK-communication", "SK-escalation-judgment"], "risk_effect": "decrease", "expected_outcome": "Approvals resume with evidence that the control remains stable."},
+        {"id": "OPT-FIN-5B", "label": "Remove the temporary control immediately", "description": "Return to baseline without a monitoring checkpoint.", "action_type": "custom_fin_remove_control", "competencies": ["SK-escalation-judgment"], "risk_effect": "neutral", "expected_outcome": "The workflow resumes without proving continued control effectiveness."}
+      ],
+      "evaluation_focus": ["SK-communication", "SK-escalation-judgment"]
+    }
+  ],
+  "success_criteria": ["Contain the approval workflow", "Preserve independent validation", "Reconcile across all control totals", "Resume through monitored approval"],
+  "failure_modes": ["Approve incomplete evidence", "Expand recovery beyond the fault boundary", "Combine correction and approval ownership"],
+  "knowledge_refs": ["RUNBOOK-DB-RECOVERY", "MANAGER-READINESS-RUBRIC"],
+  "tags": ["finance-operations", "reconciliation", "approval-control", "governance"]
+}

@@ -9,8 +9,10 @@ from app.mcp_server.tools import (
 )
 from app.orchestration.turn_loop import run_simulation
 from app.replay.time_travel import branch_from_session
+from app.workspace.config import with_examples_for_validation
 
 
+@with_examples_for_validation
 def main() -> None:
     tools = list_registered_tools()
     assert len(tools) >= 6, "Expected at least six registered CRISOL tools."

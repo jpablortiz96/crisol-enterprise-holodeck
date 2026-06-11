@@ -3,8 +3,10 @@ from app.orchestration.turn_loop import run_simulation
 from app.scoring.competence_report import generate_competence_report
 from app.scoring.rubric import validate_weights
 from app.storage.session_store import list_sessions, load_session
+from app.workspace.config import with_examples_for_validation
 
 
+@with_examples_for_validation
 def main() -> None:
     assert validate_weights(), "Rubric weights must sum to 1.0."
 

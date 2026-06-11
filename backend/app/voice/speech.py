@@ -14,7 +14,13 @@ AUDIO_ROOT = Path(__file__).resolve().parents[2] / ".crisol_audio"
 load_dotenv(AUDIO_ROOT.parents[1] / ".env")
 MAX_SPEECH_TEXT_LENGTH = 450
 DEFAULT_VOICE = "en-US-JennyNeural"
-PERSONA_VOICE_CONFIG = {
+VOICE_STYLE_CONFIG = {
+    "calm": ("AZURE_SPEECH_VOICE_CALM", "en-US-JennyNeural"),
+    "urgent": ("AZURE_SPEECH_VOICE_URGENT", "en-US-AvaMultilingualNeural"),
+    "analytical": ("AZURE_SPEECH_VOICE_ANALYTICAL", "en-US-DavisNeural"),
+    "supportive": ("AZURE_SPEECH_VOICE_SUPPORTIVE", "en-US-SaraNeural"),
+}
+KNOWN_PERSONA_VOICE_CONFIG = {
     "VP Operations": ("AZURE_SPEECH_VOICE_VP", "en-US-AvaMultilingualNeural"),
     "Product Manager": ("AZURE_SPEECH_VOICE_PM", "en-US-JennyNeural"),
     "Database Lead": ("AZURE_SPEECH_VOICE_DB", "en-US-DavisNeural"),
@@ -26,11 +32,23 @@ def is_speech_configured() -> bool:
     return bool(os.getenv("AZURE_SPEECH_KEY") and os.getenv("AZURE_SPEECH_REGION"))
 
 
-def voice_for_persona(persona: str) -> str:
-    env_name, default_voice = PERSONA_VOICE_CONFIG.get(persona, ("", DEFAULT_VOICE))
-    if not env_name:
-        return DEFAULT_VOICE
-    return os.getenv(env_name) or default_voice
+def voice_for_persona(
+    persona: str,
+    voice_style: str | None = None,
+    pressure_profile: str | None = None,
+) -> str:
+    known_voice = KNOWN_PERSONA_VOICE_CONFIG.get(persona)
+    if known_voice:
+        env_name, default_voice = known_voice
+        return os.getenv(env_name) or default_voice
+    normalized_style = (voice_style or "").strip().lower()
+    if normalized_style in VOICE_STYLE_CONFIG:
+        env_name, default_voice = VOICE_STYLE_CONFIG[normalized_style]
+        return os.getenv(env_name) or default_voice
+    if (pressure_profile or "").strip().lower() in {"high", "critical"}:
+        env_name, default_voice = VOICE_STYLE_CONFIG["urgent"]
+        return os.getenv(env_name) or default_voice
+    return DEFAULT_VOICE
 
 
 def sanitize_audio_filename(value: str) -> str:
@@ -44,11 +62,13 @@ def synthesize_npc_line(
     persona: str,
     session_id: str | None = None,
     event_id: str | None = None,
+    voice_style: str | None = None,
+    pressure_profile: str | None = None,
 ) -> dict[str, Any]:
     if not is_speech_configured():
         return _record_voice_result(_text_fallback(), session_id)
 
-    voice_name = voice_for_persona(persona)
+    voice_name = voice_for_persona(persona, voice_style, pressure_profile)
     safe_text = " ".join(text.split())[:MAX_SPEECH_TEXT_LENGTH]
     if not safe_text:
         return _record_voice_result(_azure_fallback(voice_name), session_id)
@@ -119,7 +139,17 @@ def synthesize_npc_line(
 
 
 def configured_voices() -> dict[str, str]:
-    return {persona: voice_for_persona(persona) for persona in PERSONA_VOICE_CONFIG}
+    voices = {
+        persona: os.getenv(env_name) or default_voice
+        for persona, (env_name, default_voice) in KNOWN_PERSONA_VOICE_CONFIG.items()
+    }
+    voices.update(
+        {
+            f"style:{style}": os.getenv(env_name) or default_voice
+            for style, (env_name, default_voice) in VOICE_STYLE_CONFIG.items()
+        }
+    )
+    return voices
 
 
 def _success_result(voice_name: str, audio_url: str) -> dict[str, Any]:

@@ -60,12 +60,15 @@ def build_stream_events(session: dict[str, Any], manager_snapshot: dict[str, Any
                 reaction["persona"],
                 session_id=session_id,
                 event_id=event_id,
+                voice_style=reaction.get("voice_style"),
+                pressure_profile=reaction.get("pressure_profile"),
             )
             add(
                 "npc_reaction",
                 {
                     "turn_number": turn_number,
-                    "reaction": reaction,
+                    "reaction": {**reaction, "voice": voice},
+                    **reaction,
                     "voice": voice,
                     "speech": voice,
                 },

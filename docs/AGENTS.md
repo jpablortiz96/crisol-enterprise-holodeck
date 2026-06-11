@@ -17,9 +17,11 @@ Key methods:
 
 ## NPC Ensemble
 
-The NPC Ensemble represents synthetic participants in the scenario. Phase 3 includes VP Operations, Product Manager, Database Lead, and Support Lead personas.
+The NPC Ensemble represents synthetic participants defined by each scenario. When a scenario omits personas, the ensemble derives a deterministic generic roster from its role, industry, tags, and difficulty.
 
 Current implementation: `app.agents.npcs.generate_npc_reactions`
+
+Each reaction carries the scenario persona's role, communication style, pressure profile, voice style, and avatar style through orchestration and live streaming.
 
 ## Consequence Engine
 

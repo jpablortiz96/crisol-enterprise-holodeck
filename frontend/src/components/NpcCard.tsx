@@ -7,28 +7,36 @@ import type { CSSProperties } from "react";
 type NpcCardProps = {
   persona: string;
   role: string;
+  communicationStyle: string;
+  avatarStyle: string;
   pressure: number;
   status: string;
   active?: boolean;
   compact?: boolean;
 };
 
-const PERSONA_ACCENTS: Record<string, string> = {
-  "VP Operations": "#22d3ee",
-  "Product Manager": "#fbbf24",
-  "Database Lead": "#34d399",
-  "Support Lead": "#fb7185",
+const AVATAR_ACCENTS: Record<string, string> = {
+  "holographic-operator": "#22d3ee",
+  "holographic-stakeholder": "#fbbf24",
+  "holographic-specialist": "#34d399",
+  "holographic-observer": "#a78bfa",
+  "holographic-customer": "#fb7185",
+  "holographic-risk": "#f97316",
+  "holographic-controls": "#60a5fa",
+  "holographic-service": "#2dd4bf",
 };
 
 export function NpcCard({
   persona,
   role,
+  communicationStyle,
+  avatarStyle,
   pressure,
   status,
   active = false,
   compact = false,
 }: NpcCardProps) {
-  const accent = PERSONA_ACCENTS[persona] ?? "#94a3b8";
+  const accent = AVATAR_ACCENTS[avatarStyle] ?? accentForPersona(persona);
 
   return (
     <motion.article
@@ -69,6 +77,7 @@ export function NpcCard({
             <div className="min-w-0">
               <p className="text-sm font-semibold leading-4 text-white">{persona}</p>
               <p className="truncate text-[11px] uppercase text-slate-500">{role}</p>
+              <p className="mt-1 line-clamp-1 text-[10px] text-slate-600">{communicationStyle}</p>
             </div>
             <span className="flex items-center gap-1 text-[10px] uppercase text-slate-400">
               <CircleDot className={`h-3 w-3 ${active ? "animate-pulse" : ""}`} style={{ color: accent }} />
@@ -101,4 +110,10 @@ export function NpcCard({
       </div>
     </motion.article>
   );
+}
+
+function accentForPersona(persona: string): string {
+  const palette = ["#22d3ee", "#fbbf24", "#34d399", "#fb7185", "#a78bfa", "#60a5fa"];
+  const value = [...persona].reduce((total, character) => total + character.charCodeAt(0), 0);
+  return palette[value % palette.length];
 }

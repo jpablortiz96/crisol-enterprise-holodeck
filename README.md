@@ -20,7 +20,12 @@ The platform is designed for:
 
 ## Product Capabilities
 
-- Five-pack Scenario Library with validated sanitized training data.
+- Empty-by-default configurable enterprise workspace.
+- Validated workspace export and import packages.
+- Guided first-customer walkthrough with actionable setup state.
+- Scenario-driven NPC personas with deterministic generic fallbacks.
+- Scenario, knowledge, role, skill, and evaluated-profile studios.
+- Workspace Scenario Library with optional validated example packs.
 - One-shot and synchronized live simulations.
 - Branching consequence timeline with severity and revenue deltas.
 - Azure Speech NPC room with text fallback.
@@ -39,7 +44,7 @@ CRISOL uses a Next.js War Room and a FastAPI service. The backend combines a Net
 ```text
 Next.js War Room
   -> FastAPI product API
-     -> Scenario Library and simulation director
+     -> Workspace configuration and Scenario Library
      -> Ontology and business-impact graph
      -> Grounding and citation adapters
      -> Competence and manager insights
@@ -60,9 +65,42 @@ Architecture details are documented in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.
 
 Every scored claim and grounded answer retains citations or returns a bounded fallback result.
 
+## Workspace Setup
+
+CRISOL starts empty. Initialize or inspect the local workspace from `backend`:
+
+```powershell
+python -m app.workspace.setup --empty
+python -m app.workspace.setup --status
+python -m app.workspace.setup --with-examples
+python -m app.workspace.setup --creator-operations-template
+python -m app.workspace.setup --eduky-template
+```
+
+The browser setup flow exposes Start Empty, generic workspace packs, Creator Operations Readiness, the optional example pack, and a separate optional customer-specific pack. Organization name, industry, and workspace name can be configured independently of any template. Generated workspace files stay under ignored local storage and are not committed.
+
+- [Empty workspace mode](docs/EMPTY_WORKSPACE.md)
+- [Workspace setup](docs/WORKSPACE_SETUP.md)
+- [First customer workspace](docs/FIRST_CUSTOMER_WORKSPACE.md)
+- [Product walkthrough](docs/PRODUCT_WALKTHROUGH.md)
+- [Workspace packages](docs/WORKSPACE_PACKAGES.md)
+- [Eduky first-customer walkthrough](docs/FIRST_CUSTOMER_EDUKY.md)
+
+## Workspace Packages
+
+Export, inspect, and import the active sanitized workspace from `backend`:
+
+```powershell
+python -m app.workspace.package --export
+python -m app.workspace.package --summary .crisol_exports/wpk-example.json
+python -m app.workspace.package --import .crisol_exports/wpk-example.json
+```
+
+Exports are stored under ignored local storage at `backend/.crisol_exports/`. Import validates the complete package before replacing the generated workspace and keeps examples disabled.
+
 ## Scenario Library
 
-Scenario packs are manually authored JSON files under `backend/app/data/scenario_packs/`. Each pack declares fictional identifiers, role, industry, systems, personas, decisions, success criteria, failure modes, and knowledge references.
+Workspace scenarios are saved under ignored local storage at `backend/app/data/workspace/scenario_packs/`. Versioned examples are stored separately under `backend/app/data/examples/scenario_packs/` and appear only when example mode is enabled. Each pack declares fictional identifiers, role, industry, systems, decisions, success criteria, failure modes, and knowledge references. Personas are scenario-specific; when omitted, CRISOL derives a deterministic generic roster from the scenario context.
 
 ```powershell
 cd backend
@@ -139,6 +177,8 @@ npm run dev
 
 Open `http://localhost:3000`.
 
+The first launch presents an empty-workspace setup panel. Configure content manually, apply Creator Operations Readiness or another generic template, apply the separate optional customer pack, or enable the example pack.
+
 Recording Mode is available in the command header. It preserves Scenario Library, live simulation, Azure Speech status, citations, revenue impact, timeline, Competence Score, Manager Fragility Map, Time-Travel Replay, and MCP tools while reducing technical recording noise.
 
 ## Validation Commands
@@ -146,6 +186,9 @@ Recording Mode is available in the command header. It preserves Scenario Library
 ```powershell
 cd backend
 python -m app.security.scan
+python -m app.validate_workspace_package
+python -m app.validate_dynamic_personas
+python -m app.validate_empty_workspace
 python -m app.validate_release
 python -m app.validate_phase9
 python -m app.validate_phase8

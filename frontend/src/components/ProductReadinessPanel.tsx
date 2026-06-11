@@ -25,7 +25,7 @@ export function ProductReadinessPanel() {
           value={
             telemetrySummary?.evaluation_score !== null
               && telemetrySummary?.evaluation_score !== undefined
-              ? `${telemetrySummary.evaluation_status} · ${telemetrySummary.evaluation_score}`
+              ? `${telemetrySummary.evaluation_status} / ${telemetrySummary.evaluation_score}`
               : telemetrySummary?.evaluation_status ?? "Pending"
           }
         />

@@ -1,16 +1,11 @@
-import json
-from pathlib import Path
 from typing import Any
 
+from app.agents.npcs import normalize_personas
 from app.grounding.local_knowledge import answer_with_citations
 from app.scenarios.library import (
     scenario_to_runtime_seed,
     select_scenario as select_scenario_pack,
 )
-
-
-DATA_DIR = Path(__file__).resolve().parents[1] / "data"
-SCENARIO_FILE = DATA_DIR / "scenarios.json"
 
 
 AUTO_DECISION_PLAN = [
@@ -80,36 +75,20 @@ TURN_QUERIES = [
 
 
 class ScenarioDirector:
-    def __init__(self, scenario_file: Path = SCENARIO_FILE) -> None:
-        self.scenario_file = scenario_file
-
-    def _load_scenarios(self) -> list[dict[str, Any]]:
-        with self.scenario_file.open("r", encoding="utf-8") as source:
-            return json.load(source)
-
     def select_scenario(self, role_id: str, scenario_seed: str | None = None) -> dict[str, Any]:
         try:
             return scenario_to_runtime_seed(
                 select_scenario_pack(role_id=role_id, scenario_id=scenario_seed)
             )
-        except FileNotFoundError:
-            pass
-
-        scenarios = self._load_scenarios()
-        if scenario_seed:
-            for scenario in scenarios:
-                if scenario["id"] == scenario_seed:
-                    return scenario
-            raise ValueError(f"Unknown scenario seed: {scenario_seed}")
-
-        for scenario in scenarios:
-            if scenario["role_id"] == role_id:
-                return scenario
-
-        raise ValueError(f"No scenario found for role: {role_id}")
+        except FileNotFoundError as error:
+            raise ValueError(
+                "No scenario is configured for this role. Create a workspace scenario "
+                "or enable the optional example pack."
+            ) from error
 
     def start_session(self, role_id: str, scenario_seed: str | None = None) -> dict[str, Any]:
         scenario = self.select_scenario(role_id, scenario_seed)
+        scenario["personas"] = normalize_personas(scenario)
         grounding_query = " ".join(
             scenario.get("knowledge_refs", [])
             or scenario.get("tags", [])
@@ -146,7 +125,7 @@ class ScenarioDirector:
             "severity": state["severity"],
             "affected_systems": state["impacted_systems"],
             "situation": self._build_situation(state, grounding["answer"]),
-            "active_npcs": self._active_npcs(state["severity"], turn_index),
+            "active_npcs": state["scenario"]["personas"],
             "available_options": available_options,
             "auto_decision": auto_decision,
             "citations": grounding["citations"],
@@ -160,14 +139,6 @@ class ScenarioDirector:
             f"Severity {state['severity']} incident across {', '.join(state['impacted_systems'])}. "
             f"{grounded_fact}"
         )
-
-    def _active_npcs(self, severity: int, turn_index: int) -> list[str]:
-        personas = ["VP Operations", "Product Manager", "Database Lead", "Support Lead"]
-        if severity >= 5:
-            return personas
-        if turn_index < 2:
-            return personas[:3]
-        return personas[1:]
 
     def _build_library_turn_context(
         self,
@@ -184,7 +155,6 @@ class ScenarioDirector:
         )
         grounding = answer_with_citations(query, top_k=3)
         options = turn["options"]
-        personas = [persona["persona"] for persona in scenario.get("personas", [])]
         return {
             "turn_number": state["turn_index"] + 1,
             "scenario_id": scenario["id"],
@@ -194,7 +164,7 @@ class ScenarioDirector:
                 f"Severity {state['severity']} across {', '.join(state['impacted_systems'])}. "
                 f"{turn['situation']} {grounding['answer']}"
             ),
-            "active_npcs": personas or self._active_npcs(state["severity"], state["turn_index"]),
+            "active_npcs": scenario["personas"],
             "available_options": options,
             "auto_decision": options[0],
             "citations": grounding["citations"],

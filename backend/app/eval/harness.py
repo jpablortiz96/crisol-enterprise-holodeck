@@ -22,8 +22,10 @@ from app.scenarios.importer import validate_scenario_directory
 from app.scenarios.library import list_scenarios
 from app.telemetry.events import emit_event
 from app.voice.speech import synthesize_npc_line
+from app.workspace.config import with_examples_for_validation
 
 
+@with_examples_for_validation
 def run_eval_suite() -> dict[str, Any]:
     source_session = run_simulation(
         role_id="ROLE-SRE",
@@ -171,9 +173,10 @@ def _voice_fallback_check() -> dict[str, Any]:
     ):
         result = synthesize_npc_line(
             "Sanitized fallback verification.",
-            "VP Operations",
+            "Operations Lead",
             session_id="SES-EVAL-VOICE",
             event_id="EVT-EVAL-VOICE",
+            voice_style="calm",
         )
     status = "pass" if result["provider"] == "text-only" and not result["enabled"] else "fail"
     return check_result(

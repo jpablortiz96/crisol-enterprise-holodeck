@@ -45,7 +45,10 @@ def run_simulation(
     turns = []
 
     while director.should_continue(state):
-        turn_context = director.build_turn_context(state)
+        turn_context = {
+            **director.build_turn_context(state),
+            "active_npcs": state["scenario"]["personas"],
+        }
         decision = _select_decision(turn_context, auto_mode)
         consequence = evaluate_decision(graph, state, decision)
         decision_node = create_decision_node(

@@ -12,10 +12,27 @@ import {
   getScenarios,
   getTelemetrySummary,
   getVoiceStatus,
+  getWorkspaceKnowledge,
+  getWorkspaceProfiles,
+  getWorkspaceRoles,
+  getWorkspaceSkills,
+  getWorkspaceStatus,
+  getWorkspaceWalkthrough,
+  getWorkspaceTemplates,
+  initializeEmptyWorkspace,
+  applyEdukyTemplate,
+  applyWorkspaceTemplate,
+  configureWorkspaceOrganization,
+  enableWorkspaceExamples,
+  disableWorkspaceExamples,
+  saveWorkspaceKnowledge,
+  saveWorkspaceProfile,
+  saveWorkspaceRole,
+  saveWorkspaceScenario,
+  saveWorkspaceSkill,
+  validateWorkspaceScenario,
   runMcpDemo as runMcpDemoRequest,
-  runScenario,
   runCustomScenario,
-  scenarioStreamUrl,
   streamCustomScenarioUrl,
 } from "@/lib/api";
 import { PlaybackDirector } from "@/lib/playback";
@@ -44,17 +61,37 @@ import type {
   TurnRecord,
   VoiceStatusResponse,
   VoiceSynthesisResult,
+  WorkspaceStatus,
+  WorkspaceWalkthrough,
+  KnowledgeDocument,
+  WorkspaceProfile,
+  WorkspaceRole,
+  WorkspaceSkill,
+  WorkspaceTemplates,
+  AppSection,
+  ScenarioValidationResult,
 } from "@/lib/types";
 
 type WarRoomState = {
+  activeSection: AppSection;
   health: HealthResponse | null;
   session: SimulationRun | null;
+  latestSession: SimulationRun | null;
   latestReport: CompetenceReport | null;
   fragilityMap: ManagerFragilityMap | null;
   readinessSummary: ReadinessSummary | null;
   scenarios: ScenarioSummary[];
   selectedScenarioId: string | null;
+  selectedProfileId: string | null;
   telemetrySummary: TelemetrySummary | null;
+  workspaceStatus: WorkspaceStatus | null;
+  workspaceWalkthrough: WorkspaceWalkthrough | null;
+  workspaceKnowledge: KnowledgeDocument[];
+  workspaceRoles: WorkspaceRole[];
+  workspaceSkills: WorkspaceSkill[];
+  workspaceProfiles: WorkspaceProfile[];
+  workspaceTemplates: WorkspaceTemplates | null;
+  workspaceEditing: boolean;
   mcpTools: McpTool[];
   mcpDemo: McpDemoResponse | null;
   replayBranch: ReplayBranchResult | null;
@@ -72,6 +109,7 @@ type WarRoomState = {
   isLoading: boolean;
   isMcpLoading: boolean;
   isBranching: boolean;
+  isWorkspaceSaving: boolean;
   error: string | null;
   initialize: () => Promise<void>;
   runSreSimulation: () => Promise<void>;
@@ -82,7 +120,29 @@ type WarRoomState = {
   setPlaybackSpeed: (speed: PlaybackSpeed) => void;
   toggleVoice: () => void;
   toggleRecordingMode: () => void;
+  refreshWorkspace: () => Promise<void>;
+  startEmptyWorkspace: () => Promise<void>;
+  applyEdukyWorkspace: () => Promise<void>;
+  applyTemplate: (templateId: string) => Promise<void>;
+  configureOrganization: (configuration: {
+    organization_name: string;
+    industry: string;
+    workspace_name: string;
+  }) => Promise<void>;
+  setExamplesEnabled: (enabled: boolean) => Promise<void>;
+  saveKnowledge: (fileName: string, content: string) => Promise<void>;
+  saveRole: (role: Omit<WorkspaceRole, "data_classification">) => Promise<void>;
+  saveSkill: (skill: Omit<WorkspaceSkill, "data_classification">) => Promise<void>;
+  saveProfile: (profile: Omit<WorkspaceProfile, "data_classification">) => Promise<void>;
+  saveScenario: (scenario: Record<string, unknown>) => Promise<void>;
+  validateScenario: (scenario: Record<string, unknown>) => Promise<ScenarioValidationResult>;
   selectScenario: (scenarioId: string) => void;
+  selectProfile: (profileId: string) => void;
+  setActiveSection: (section: AppSection) => void;
+  goToEvaluation: () => void;
+  goToResults: () => void;
+  goToSetup: () => void;
+  goToScenarioStudio: () => void;
   setSelectedDecisionNode: (nodeId: string) => void;
   branchFromDecision: (alternativeAction: string) => Promise<void>;
   runMcpDemo: () => Promise<void>;
@@ -130,14 +190,25 @@ export const useWarRoomStore = create<WarRoomState>((set, get) => {
   });
 
   return {
+    activeSection: "command-center",
     health: null,
     session: null,
+    latestSession: null,
     latestReport: null,
     fragilityMap: null,
     readinessSummary: null,
     scenarios: [],
     selectedScenarioId: null,
+    selectedProfileId: null,
     telemetrySummary: null,
+    workspaceStatus: null,
+    workspaceWalkthrough: null,
+    workspaceKnowledge: [],
+    workspaceRoles: [],
+    workspaceSkills: [],
+    workspaceProfiles: [],
+    workspaceTemplates: null,
+    workspaceEditing: false,
     mcpTools: [],
     mcpDemo: null,
     replayBranch: null,
@@ -155,11 +226,28 @@ export const useWarRoomStore = create<WarRoomState>((set, get) => {
     isLoading: false,
     isMcpLoading: false,
     isBranching: false,
+    isWorkspaceSaving: false,
     error: null,
     initialize: async () => {
       set({ isLoading: true, error: null });
       try {
-        const [health, latestReport, readinessSummary, fragilityMap, voiceStatus, mcpTools, scenarios, telemetrySummary] = await Promise.allSettled([
+        const [
+          health,
+          latestReport,
+          readinessSummary,
+          fragilityMap,
+          voiceStatus,
+          mcpTools,
+          scenarios,
+          telemetrySummary,
+          workspaceStatus,
+          workspaceWalkthrough,
+          workspaceKnowledge,
+          workspaceRoles,
+          workspaceSkills,
+          workspaceProfiles,
+          workspaceTemplates,
+        ] = await Promise.allSettled([
           getHealth(),
           getLatestReport(),
           getReadinessSummary(),
@@ -168,6 +256,13 @@ export const useWarRoomStore = create<WarRoomState>((set, get) => {
           getMcpTools(),
           getScenarios(),
           getTelemetrySummary(),
+          getWorkspaceStatus(),
+          getWorkspaceWalkthrough(),
+          getWorkspaceKnowledge(),
+          getWorkspaceRoles(),
+          getWorkspaceSkills(),
+          getWorkspaceProfiles(),
+          getWorkspaceTemplates(),
         ]);
         const availableScenarios = scenarios.status === "fulfilled" ? scenarios.value : [];
 
@@ -184,7 +279,20 @@ export const useWarRoomStore = create<WarRoomState>((set, get) => {
             ?? availableScenarios.find((scenario) => scenario.scenario_id === "SCN-SRE-001")?.scenario_id
             ?? availableScenarios[0]?.scenario_id
             ?? null,
+          selectedProfileId:
+            get().selectedProfileId
+            ?? (workspaceProfiles.status === "fulfilled"
+              ? workspaceProfiles.value[0]?.profile_id ?? null
+              : null),
           telemetrySummary: telemetrySummary.status === "fulfilled" ? telemetrySummary.value : null,
+          workspaceStatus: workspaceStatus.status === "fulfilled" ? workspaceStatus.value : null,
+          workspaceWalkthrough:
+            workspaceWalkthrough.status === "fulfilled" ? workspaceWalkthrough.value : null,
+          workspaceKnowledge: workspaceKnowledge.status === "fulfilled" ? workspaceKnowledge.value : [],
+          workspaceRoles: workspaceRoles.status === "fulfilled" ? workspaceRoles.value : [],
+          workspaceSkills: workspaceSkills.status === "fulfilled" ? workspaceSkills.value : [],
+          workspaceProfiles: workspaceProfiles.status === "fulfilled" ? workspaceProfiles.value : [],
+          workspaceTemplates: workspaceTemplates.status === "fulfilled" ? workspaceTemplates.value : null,
           isLoading: false,
         });
       } catch (error) {
@@ -208,22 +316,38 @@ export const useWarRoomStore = create<WarRoomState>((set, get) => {
         const selectedScenario = get().scenarios.find(
           (scenario) => scenario.scenario_id === get().selectedScenarioId,
         );
-        const session = selectedScenario
-          ? await runCustomScenario(selectedScenario.scenario_id, selectedScenario.role_id)
-          : await runScenario("ROLE-SRE");
-        const [fragilityMap, readinessSummary, latestReport, telemetrySummary] = await Promise.allSettled([
+        if (!selectedScenario) {
+          throw new Error("Create or select a scenario before starting a run.");
+        }
+        const session = await runCustomScenario(
+          selectedScenario.scenario_id,
+          selectedScenario.role_id,
+        );
+        const [
+          fragilityMap,
+          readinessSummary,
+          latestReport,
+          telemetrySummary,
+          workspaceWalkthrough,
+        ] = await Promise.allSettled([
           getFragilityMap(),
           getReadinessSummary(),
           getLatestReport(),
           getTelemetrySummary(),
+          getWorkspaceWalkthrough(),
         ]);
 
         set({
           session,
+          latestSession: session,
           latestReport: latestReport.status === "fulfilled" ? latestReport.value : session.final_score,
           fragilityMap: fragilityMap.status === "fulfilled" ? fragilityMap.value : null,
           readinessSummary: readinessSummary.status === "fulfilled" ? readinessSummary.value : null,
           telemetrySummary: telemetrySummary.status === "fulfilled" ? telemetrySummary.value : get().telemetrySummary,
+          workspaceWalkthrough:
+            workspaceWalkthrough.status === "fulfilled"
+              ? workspaceWalkthrough.value
+              : get().workspaceWalkthrough,
           selectedDecisionNodeId: firstDecisionNodeId(session.timeline),
           replayBranch: null,
           isLoading: false,
@@ -250,10 +374,16 @@ export const useWarRoomStore = create<WarRoomState>((set, get) => {
       const selectedScenario = get().scenarios.find(
         (scenario) => scenario.scenario_id === get().selectedScenarioId,
       );
+      if (!selectedScenario) {
+        set({
+          streamStatus: "idle",
+          playbackStatus: "idle",
+          error: "Create or select a scenario before starting live simulation.",
+        });
+        return;
+      }
       const source = new EventSource(
-        selectedScenario
-          ? streamCustomScenarioUrl(selectedScenario.scenario_id, selectedScenario.role_id)
-          : scenarioStreamUrl("ROLE-SRE"),
+        streamCustomScenarioUrl(selectedScenario.scenario_id, selectedScenario.role_id),
       );
       liveSource = source;
       set({
@@ -291,6 +421,9 @@ export const useWarRoomStore = create<WarRoomState>((set, get) => {
               .catch(() => undefined);
             void getTelemetrySummary()
               .then((telemetrySummary) => set({ telemetrySummary }))
+              .catch(() => undefined);
+            void getWorkspaceWalkthrough()
+              .then((workspaceWalkthrough) => set({ workspaceWalkthrough }))
               .catch(() => undefined);
           }
         } catch (error) {
@@ -364,6 +497,123 @@ export const useWarRoomStore = create<WarRoomState>((set, get) => {
         displayMode: get().displayMode === "recording" ? "standard" : "recording",
       });
     },
+    refreshWorkspace: async () => {
+      const [
+        workspaceStatus,
+        workspaceWalkthrough,
+        scenarios,
+        knowledge,
+        roles,
+        skills,
+        profiles,
+        templates,
+      ] = await Promise.all([
+        getWorkspaceStatus(),
+        getWorkspaceWalkthrough(),
+        getScenarios(),
+        getWorkspaceKnowledge(),
+        getWorkspaceRoles(),
+        getWorkspaceSkills(),
+        getWorkspaceProfiles(),
+        getWorkspaceTemplates(),
+      ]);
+      const selectedScenarioId = scenarios.some(
+        (scenario) => scenario.scenario_id === get().selectedScenarioId,
+      )
+        ? get().selectedScenarioId
+        : scenarios[0]?.scenario_id ?? null;
+      set({
+        workspaceStatus,
+        workspaceWalkthrough,
+        scenarios,
+        selectedScenarioId,
+        workspaceKnowledge: knowledge,
+        workspaceRoles: roles,
+        workspaceSkills: skills,
+        workspaceProfiles: profiles,
+        selectedProfileId: profiles.some(
+          (profile) => profile.profile_id === get().selectedProfileId,
+        )
+          ? get().selectedProfileId
+          : profiles[0]?.profile_id ?? null,
+        workspaceTemplates: templates,
+      });
+    },
+    startEmptyWorkspace: async () => {
+      set({ isWorkspaceSaving: true, error: null });
+      try {
+        await initializeEmptyWorkspace();
+        set({ workspaceEditing: true });
+        await get().refreshWorkspace();
+        set({ isWorkspaceSaving: false });
+      } catch (error) {
+        set({
+          isWorkspaceSaving: false,
+          error: error instanceof Error ? error.message : "Workspace initialization failed",
+        });
+        throw error;
+      }
+    },
+    applyEdukyWorkspace: async () => {
+      set({ isWorkspaceSaving: true, error: null });
+      try {
+        await applyEdukyTemplate();
+        set({ workspaceEditing: true });
+        await get().refreshWorkspace();
+        set({ isWorkspaceSaving: false });
+      } catch (error) {
+        set({
+          isWorkspaceSaving: false,
+          error: error instanceof Error ? error.message : "Workspace template failed",
+        });
+        throw error;
+      }
+    },
+    applyTemplate: async (templateId) => {
+      await workspaceMutation(set, get, () => applyWorkspaceTemplate(templateId));
+    },
+    configureOrganization: async (configuration) => {
+      await workspaceMutation(
+        set,
+        get,
+        () => configureWorkspaceOrganization(configuration),
+      );
+    },
+    setExamplesEnabled: async (enabled) => {
+      set({ isWorkspaceSaving: true, error: null });
+      try {
+        if (enabled) {
+          await enableWorkspaceExamples();
+        } else {
+          await disableWorkspaceExamples();
+        }
+        set({ workspaceEditing: true });
+        await get().refreshWorkspace();
+        set({ isWorkspaceSaving: false });
+      } catch (error) {
+        set({
+          isWorkspaceSaving: false,
+          error: error instanceof Error ? error.message : "Example mode update failed",
+        });
+        throw error;
+      }
+    },
+    saveKnowledge: async (fileName, content) => {
+      await workspaceMutation(set, get, () => saveWorkspaceKnowledge(fileName, content));
+    },
+    saveRole: async (role) => {
+      await workspaceMutation(set, get, () => saveWorkspaceRole(role));
+    },
+    saveSkill: async (skill) => {
+      await workspaceMutation(set, get, () => saveWorkspaceSkill(skill));
+    },
+    saveProfile: async (profile) => {
+      await workspaceMutation(set, get, () => saveWorkspaceProfile(profile));
+    },
+    saveScenario: async (scenario) => {
+      await workspaceMutation(set, get, () => saveWorkspaceScenario(scenario));
+    },
+    validateScenario: async (scenario) => validateWorkspaceScenario(scenario),
     selectScenario: (selectedScenarioId) => {
       if (get().streamStatus === "live") {
         return;
@@ -375,6 +625,24 @@ export const useWarRoomStore = create<WarRoomState>((set, get) => {
         selectedDecisionNodeId: null,
         error: null,
       });
+    },
+    selectProfile: (selectedProfileId) => {
+      set({ selectedProfileId, error: null });
+    },
+    setActiveSection: (activeSection) => {
+      set({ activeSection });
+    },
+    goToEvaluation: () => {
+      set({ activeSection: "evaluation-room" });
+    },
+    goToResults: () => {
+      set({ activeSection: "results-center" });
+    },
+    goToSetup: () => {
+      set({ activeSection: "workspace-setup" });
+    },
+    goToScenarioStudio: () => {
+      set({ activeSection: "scenario-studio" });
     },
     setSelectedDecisionNode: (selectedDecisionNodeId) => {
       set({ selectedDecisionNodeId, replayBranch: null });
@@ -414,6 +682,26 @@ export const useWarRoomStore = create<WarRoomState>((set, get) => {
     },
   };
 });
+
+async function workspaceMutation(
+  set: (partial: Partial<WarRoomState>) => void,
+  get: () => WarRoomState,
+  mutation: () => Promise<unknown>,
+): Promise<void> {
+  set({ isWorkspaceSaving: true, error: null });
+  try {
+    await mutation();
+    set({ workspaceEditing: true });
+    await get().refreshWorkspace();
+    set({ isWorkspaceSaving: false });
+  } catch (error) {
+    set({
+      isWorkspaceSaving: false,
+      error: error instanceof Error ? error.message : "Workspace update failed",
+    });
+    throw error;
+  }
+}
 
 function reducePlaybackEvent(state: WarRoomState, payload: StreamEventEnvelope): Partial<WarRoomState> {
   const update: Partial<WarRoomState> = {
@@ -506,6 +794,7 @@ function reducePlaybackEvent(state: WarRoomState, payload: StreamEventEnvelope):
     const completedSession = payload.data.session as SimulationRun;
     const mergedSession = mergeReactionVoices(completedSession, session);
     update.session = mergedSession;
+    update.latestSession = mergedSession;
     update.latestReport = mergedSession.final_score;
     update.selectedDecisionNodeId =
       state.selectedDecisionNodeId ?? firstDecisionNodeId(mergedSession.timeline);
@@ -626,6 +915,7 @@ function createEmptySession(sessionId: string, roleId: string): SimulationRun {
       title: "Live simulation",
       role_id: roleId,
       initial_stakes: "Connecting to synchronized scenario playback.",
+      personas: [],
     },
     turns: [],
     timeline: createEmptyTimeline(sessionId),

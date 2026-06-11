@@ -49,34 +49,49 @@ def _split_chunks(text: str) -> list[str]:
 
 
 def load_knowledge_docs(data_dir: Path | None = None) -> list[dict[str, Any]]:
-    knowledge_dir = data_dir or DEFAULT_KNOWLEDGE_DIR
     documents: list[dict[str, Any]] = []
 
-    for file_path in sorted(knowledge_dir.glob("*.md")):
-        text = file_path.read_text(encoding="utf-8")
-        title = _extract_title(text, file_path)
-        doc_id = _extract_doc_id(title, file_path)
-        chunks = [
-            {
-                "doc_id": doc_id,
-                "title": title,
-                "file_name": file_path.name,
-                "chunk_id": f"{file_path.stem}#chunk-{index}",
-                "text": chunk,
-            }
-            for index, chunk in enumerate(_split_chunks(text), start=1)
-        ]
-        documents.append(
-            {
-                "doc_id": doc_id,
-                "title": title,
-                "file_name": file_path.name,
-                "text": text,
-                "chunks": chunks,
-            }
-        )
+    for knowledge_dir in _knowledge_directories(data_dir):
+        for file_path in sorted(knowledge_dir.glob("*.md")):
+            text = file_path.read_text(encoding="utf-8")
+            title = _extract_title(text, file_path)
+            doc_id = _extract_doc_id(title, file_path)
+            chunks = [
+                {
+                    "doc_id": doc_id,
+                    "title": title,
+                    "file_name": file_path.name,
+                    "chunk_id": f"{file_path.stem}#chunk-{index}",
+                    "text": chunk,
+                }
+                for index, chunk in enumerate(_split_chunks(text), start=1)
+            ]
+            documents.append(
+                {
+                    "doc_id": doc_id,
+                    "title": title,
+                    "file_name": file_path.name,
+                    "text": text,
+                    "chunks": chunks,
+                }
+            )
 
     return documents
+
+
+def _knowledge_directories(data_dir: Path | None) -> list[Path]:
+    if data_dir is not None:
+        return [data_dir]
+    from app.workspace.config import (
+        EXAMPLE_KNOWLEDGE_DIR,
+        WORKSPACE_KNOWLEDGE_DIR,
+        get_workspace_config,
+    )
+
+    directories = [WORKSPACE_KNOWLEDGE_DIR]
+    if get_workspace_config()["load_examples"]:
+        directories.append(EXAMPLE_KNOWLEDGE_DIR)
+    return directories
 
 
 def _score_chunk(query: str, chunk_text: str) -> int:

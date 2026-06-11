@@ -64,9 +64,15 @@ class ScenarioSeed(BaseModel):
 
 class NPCReaction(BaseModel):
     persona: str
+    role: str
+    communication_style: str
+    pressure_profile: str
+    voice_style: str
+    avatar_style: str
     tone: str
     message: str
     pressure_level: int
+    voice: dict | None = None
 
 
 class ContractExposure(BaseModel):

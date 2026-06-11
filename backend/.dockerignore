@@ -8,6 +8,7 @@ __pycache__
 .crisol_sessions
 .crisol_audio
 .crisol_telemetry
+app/data/workspace
 dist
 *.log
 *.md

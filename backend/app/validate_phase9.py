@@ -5,8 +5,10 @@ from app.scenarios.library import list_scenarios
 from app.scoring.competence_report import generate_competence_report
 from app.streaming.sse import build_stream_events
 from app.telemetry.events import telemetry_summary
+from app.workspace.config import with_examples_for_validation
 
 
+@with_examples_for_validation
 def main() -> None:
     scenario_report = validate_scenario_directory()
     assert scenario_report["total"] >= 5, "Expected at least five scenario packs."

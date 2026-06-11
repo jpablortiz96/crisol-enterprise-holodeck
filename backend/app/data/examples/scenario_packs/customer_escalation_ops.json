@@ -1,0 +1,68 @@
+{
+  "scenario_id": "SCN-OPS-001",
+  "title": "Customer escalation and incident coordination",
+  "industry": "Managed digital services",
+  "role_id": "ROLE-DEVOPS",
+  "difficulty": "standard",
+  "estimated_minutes": 7,
+  "data_classification": "sanitized-training",
+  "business_context": "A fictional priority account reports intermittent transaction failures while engineering teams see conflicting service indicators.",
+  "systems": ["SVC-checkout", "SVC-orders", "SVC-observability"],
+  "initial_stakes": "A priority service commitment is at risk and customer operations needs accurate, controlled communication.",
+  "personas": [
+    {"persona": "Support Lead", "role": "Customer communication owner", "communication_style": "direct", "pressure_profile": "high"},
+    {"persona": "Product Manager", "role": "Service owner", "communication_style": "focused", "pressure_profile": "medium"},
+    {"persona": "VP Operations", "role": "Executive escalation", "communication_style": "urgent", "pressure_profile": "high"}
+  ],
+  "turns": [
+    {
+      "turn_id": "T1",
+      "situation": "Support reports intermittent failures while dashboards show only partial impact.",
+      "options": [
+        {"id": "OPT-OPS-1A", "label": "Correlate customer timestamps with service traces", "description": "Validate the reported path against operational evidence.", "action_type": "correlate_observability", "competencies": ["SK-observability", "SK-incident-triage"], "risk_effect": "decrease", "expected_outcome": "The team confirms the affected transaction path."},
+        {"id": "OPT-OPS-1B", "label": "State that the platform is healthy", "description": "Dismiss the escalation because aggregate dashboards look normal.", "action_type": "custom_ops_dismiss", "competencies": ["SK-communication"], "risk_effect": "increase", "expected_outcome": "Customer trust and incident detection both deteriorate."}
+      ],
+      "evaluation_focus": ["SK-observability", "SK-incident-triage"]
+    },
+    {
+      "turn_id": "T2",
+      "situation": "Trace correlation confirms a narrow but material order-processing failure.",
+      "options": [
+        {"id": "OPT-OPS-2A", "label": "Open incident command and name service owners", "description": "Coordinate engineering, support, and product around one timeline.", "action_type": "escalate_incident_command", "competencies": ["SK-communication", "SK-escalation-judgment"], "risk_effect": "decrease", "expected_outcome": "Operational ownership and customer checkpoints become consistent."},
+        {"id": "OPT-OPS-2B", "label": "Route the issue between teams", "description": "Continue bilateral handoffs without a shared incident owner.", "action_type": "custom_ops_handoff", "competencies": ["SK-communication"], "risk_effect": "increase", "expected_outcome": "Resolution time and message inconsistency increase."}
+      ],
+      "evaluation_focus": ["SK-communication", "SK-escalation-judgment"]
+    },
+    {
+      "turn_id": "T3",
+      "situation": "The customer requests a recovery estimate before the fault is fully isolated.",
+      "options": [
+        {"id": "OPT-OPS-3A", "label": "Communicate impact, uncertainty, and next checkpoint", "description": "Give a factual update without promising an unsupported recovery time.", "action_type": "custom_ops_checkpoint", "competencies": ["SK-communication", "SK-escalation-judgment"], "risk_effect": "decrease", "expected_outcome": "The customer receives a credible operational update."},
+        {"id": "OPT-OPS-3B", "label": "Promise recovery within fifteen minutes", "description": "Provide a fixed estimate without sufficient evidence.", "action_type": "custom_ops_promise", "competencies": ["SK-communication"], "risk_effect": "increase", "expected_outcome": "An unsupported commitment increases commercial pressure."}
+      ],
+      "evaluation_focus": ["SK-communication", "SK-escalation-judgment"]
+    },
+    {
+      "turn_id": "T4",
+      "situation": "A service configuration issue is isolated and a controlled correction is available.",
+      "options": [
+        {"id": "OPT-OPS-4A", "label": "Apply correction with telemetry checkpoints", "description": "Change the affected path and verify each recovery signal.", "action_type": "custom_ops_controlled_fix", "competencies": ["SK-ci-cd", "SK-observability"], "risk_effect": "decrease", "expected_outcome": "The fault is corrected with evidence at each checkpoint."},
+        {"id": "OPT-OPS-4B", "label": "Apply the correction across every service", "description": "Expand the change beyond the confirmed fault domain.", "action_type": "custom_ops_broad_fix", "competencies": ["SK-ci-cd"], "risk_effect": "increase", "expected_outcome": "The recovery change creates unnecessary platform risk."}
+      ],
+      "evaluation_focus": ["SK-ci-cd", "SK-observability"]
+    },
+    {
+      "turn_id": "T5",
+      "situation": "Transactions are succeeding and the incident can move into monitored recovery.",
+      "options": [
+        {"id": "OPT-OPS-5A", "label": "Restore service and maintain a customer checkpoint", "description": "Confirm recovery evidence and keep one final monitoring window.", "action_type": "gradual_restore", "competencies": ["SK-communication", "SK-observability"], "risk_effect": "decrease", "expected_outcome": "Service and customer confidence recover together."},
+        {"id": "OPT-OPS-5B", "label": "Close the escalation immediately", "description": "End communication before the monitoring window completes.", "action_type": "custom_ops_close", "competencies": ["SK-communication"], "risk_effect": "neutral", "expected_outcome": "Technical recovery continues without a final confidence checkpoint."}
+      ],
+      "evaluation_focus": ["SK-communication", "SK-observability"]
+    }
+  ],
+  "success_criteria": ["Correlate customer reports with evidence", "Create one accountable command path", "Avoid unsupported commitments", "Close with monitored recovery"],
+  "failure_modes": ["Dismiss narrow impact", "Fragment ownership", "Promise unsupported recovery timing"],
+  "knowledge_refs": ["RUNBOOK-INCIDENT-ESCALATION", "RUNBOOK-CHECKOUT-OUTAGE"],
+  "tags": ["customer-operations", "escalation", "incident-command", "service-recovery"]
+}

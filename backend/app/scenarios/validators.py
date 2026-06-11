@@ -14,7 +14,6 @@ REQUIRED_FIELDS = {
     "business_context",
     "systems",
     "initial_stakes",
-    "personas",
     "turns",
     "success_criteria",
     "failure_modes",
@@ -65,8 +64,8 @@ def validate_scenario_pack(pack: dict[str, Any]) -> list[str]:
         errors.append("estimated_minutes must be a positive integer.")
     if not isinstance(pack["systems"], list) or not pack["systems"]:
         errors.append("systems must be a non-empty list.")
-    if not isinstance(pack["personas"], list) or not pack["personas"]:
-        errors.append("personas must be a non-empty list.")
+    if "personas" in pack and not isinstance(pack["personas"], list):
+        errors.append("personas must be a list when provided.")
     if not isinstance(pack["turns"], list) or not pack["turns"]:
         errors.append("turns must be a non-empty list.")
         return errors

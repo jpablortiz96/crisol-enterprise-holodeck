@@ -10,3 +10,10 @@ dist/
 backend/.crisol_sessions/
 backend/.crisol_audio/
 backend/.crisol_telemetry/
+backend/.crisol_exports/
+backend/app/data/workspace/config/workspace.json
+backend/app/data/workspace/scenario_packs/*.json
+backend/app/data/workspace/knowledge/*.md
+backend/app/data/workspace/roles/*.json
+backend/app/data/workspace/skills/*.json
+backend/app/data/workspace/profiles/*.json

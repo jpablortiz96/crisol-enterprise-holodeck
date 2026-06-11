@@ -3,7 +3,6 @@
 import { BookOpenCheck, Check, Clock3, ShieldCheck } from "lucide-react";
 import { useWarRoomStore } from "@/store/warRoomStore";
 
-
 export function ScenarioLibrary() {
   const {
     scenarios,
@@ -28,6 +27,7 @@ export function ScenarioLibrary() {
           return (
             <button
               key={scenario.scenario_id}
+              type="button"
               onClick={() => selectScenario(scenario.scenario_id)}
               disabled={streamStatus === "live"}
               className={selected ? "scenario-library-item scenario-library-selected" : "scenario-library-item"}
@@ -38,9 +38,11 @@ export function ScenarioLibrary() {
               </span>
               <span className="min-w-0 flex-1">
                 <strong>{scenario.title}</strong>
-                <span>{scenario.industry} · {scenario.role_id}</span>
+                <span>{scenario.industry} / {scenario.role_id}</span>
               </span>
               <span className="scenario-library-meta">
+                <span>{scenario.source}</span>
+                <span>{scenario.data_classification}</span>
                 <span>{scenario.difficulty}</span>
                 <span><Clock3 className="h-3 w-3" /> {scenario.estimated_minutes} min</span>
               </span>
@@ -48,7 +50,10 @@ export function ScenarioLibrary() {
           );
         })}
         {!scenarios.length && (
-          <div className="empty-state">Scenario Library is unavailable.</div>
+          <div className="empty-state scenario-library-empty">
+            <strong>No scenarios configured yet.</strong>
+            <span>Create your first scenario or apply a template.</span>
+          </div>
         )}
       </div>
     </section>

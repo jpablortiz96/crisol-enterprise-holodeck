@@ -1,65 +1,240 @@
 from typing import Any
 
 
+PERSONA_FIELDS = (
+    "persona",
+    "role",
+    "communication_style",
+    "pressure_profile",
+    "voice_style",
+    "avatar_style",
+)
+PRESSURE_OFFSETS = {
+    "low": -1,
+    "medium": 0,
+    "high": 1,
+    "critical": 2,
+}
+
+
+def normalize_personas(scenario: dict[str, Any]) -> list[dict[str, str]]:
+    raw_personas = scenario.get("personas")
+    if not isinstance(raw_personas, list) or not raw_personas:
+        return fallback_personas_for_scenario(scenario)
+
+    normalized = []
+    for index, raw_persona in enumerate(raw_personas, start=1):
+        if isinstance(raw_persona, str):
+            raw_persona = {"persona": raw_persona}
+        if not isinstance(raw_persona, dict):
+            continue
+        name = str(raw_persona.get("persona", "")).strip()
+        if not name:
+            continue
+        communication_style = (
+            str(raw_persona.get("communication_style", "")).strip()
+            or "direct and measured"
+        )
+        pressure_profile = _pressure_profile(
+            str(raw_persona.get("pressure_profile", "")).strip()
+        )
+        normalized.append(
+            {
+                "persona": name,
+                "role": (
+                    str(raw_persona.get("role", "")).strip()
+                    or f"Scenario stakeholder {index}"
+                ),
+                "communication_style": communication_style,
+                "pressure_profile": pressure_profile,
+                "voice_style": (
+                    str(raw_persona.get("voice_style", "")).strip()
+                    or _voice_style(communication_style, pressure_profile)
+                ),
+                "avatar_style": (
+                    str(raw_persona.get("avatar_style", "")).strip()
+                    or _avatar_style(index)
+                ),
+            }
+        )
+
+    return normalized or fallback_personas_for_scenario(scenario)
+
+
+def fallback_personas_for_scenario(scenario: dict[str, Any]) -> list[dict[str, str]]:
+    role_label = _title_from_identifier(str(scenario.get("role_id", "ROLE-OPERATOR")))
+    industry = str(scenario.get("industry", "")).strip() or "Business Operations"
+    tags = {
+        str(tag).strip().lower()
+        for tag in scenario.get("tags", [])
+        if str(tag).strip()
+    }
+    difficulty = str(scenario.get("difficulty", "standard")).strip().lower()
+    pressure = "high" if difficulty in {"advanced", "hard", "critical"} else "medium"
+
+    personas = [
+        {
+            "persona": f"{role_label} Counterpart",
+            "role": f"{role_label} decision counterpart",
+            "communication_style": "direct and evidence-focused",
+            "pressure_profile": pressure,
+            "voice_style": "analytical",
+            "avatar_style": "holographic-operator",
+        },
+        {
+            "persona": f"{industry} Stakeholder",
+            "role": "Business impact owner",
+            "communication_style": "calm but outcome-focused",
+            "pressure_profile": "medium",
+            "voice_style": "calm",
+            "avatar_style": "holographic-stakeholder",
+        },
+    ]
+
+    if tags & {"customer", "customer-operations", "support", "retention", "student-success"}:
+        personas.append(
+            {
+                "persona": "Customer Experience Lead",
+                "role": "Customer impact and communication owner",
+                "communication_style": "supportive and urgent",
+                "pressure_profile": pressure,
+                "voice_style": "supportive",
+                "avatar_style": "holographic-customer",
+            }
+        )
+    elif tags & {"security", "incident-response", "phishing", "risk"}:
+        personas.append(
+            {
+                "persona": "Risk Response Lead",
+                "role": "Risk containment owner",
+                "communication_style": "analytical and urgent",
+                "pressure_profile": pressure,
+                "voice_style": "urgent",
+                "avatar_style": "holographic-risk",
+            }
+        )
+    elif tags & {"finance", "reconciliation", "controls", "revenue-risk"}:
+        personas.append(
+            {
+                "persona": "Controls Lead",
+                "role": "Control integrity owner",
+                "communication_style": "precise and analytical",
+                "pressure_profile": pressure,
+                "voice_style": "analytical",
+                "avatar_style": "holographic-controls",
+            }
+        )
+    else:
+        personas.append(
+            {
+                "persona": "Service Delivery Lead",
+                "role": "Operational continuity owner",
+                "communication_style": "focused and practical",
+                "pressure_profile": pressure,
+                "voice_style": "calm",
+                "avatar_style": "holographic-service",
+            }
+        )
+
+    return personas
+
+
 def generate_npc_reactions(
     turn_context: dict[str, Any],
     decision: dict[str, Any],
     consequence: dict[str, Any],
 ) -> list[dict[str, Any]]:
-    severity = consequence["new_severity"]
-    delta = consequence["severity_delta"]
-    action_type = decision.get("action_type", "")
+    severity = int(consequence["new_severity"])
+    delta = int(consequence["severity_delta"])
     reactions = []
 
     for persona in turn_context["active_npcs"]:
+        pressure_level = max(
+            1,
+            min(
+                5,
+                severity + PRESSURE_OFFSETS.get(persona["pressure_profile"], 0),
+            ),
+        )
         reactions.append(
             {
-                "persona": persona,
+                **{field: persona[field] for field in PERSONA_FIELDS},
                 "tone": _tone(persona, delta, severity),
-                "message": _message(persona, action_type, consequence),
-                "pressure_level": max(1, min(5, severity + (1 if persona == "VP Operations" else 0))),
+                "message": _message(persona, decision, consequence),
+                "pressure_level": pressure_level,
             }
         )
 
     return reactions
 
 
-def _tone(persona: str, delta: int, severity: int) -> str:
+def _tone(persona: dict[str, str], delta: int, severity: int) -> str:
+    style = persona["communication_style"].lower()
     if delta > 0 or severity >= 5:
         return "urgent"
-    if persona == "Database Lead":
-        return "technical"
+    if "analytical" in style or "technical" in style or "precise" in style:
+        return "analytical"
     if delta < 0:
         return "focused"
+    if "support" in style or "empathetic" in style:
+        return "supportive"
     return "concerned"
 
 
-def _message(persona: str, action_type: str, consequence: dict[str, Any]) -> str:
-    affected = ", ".join(consequence["affected_systems"][:4])
+def _message(
+    persona: dict[str, str],
+    decision: dict[str, Any],
+    consequence: dict[str, Any],
+) -> str:
+    role = persona["role"]
+    style = persona["communication_style"]
+    action = decision.get("label") or decision.get("description") or "The selected action"
+    affected = ", ".join(consequence["affected_systems"][:3]) or "the active workflow"
+    outcome = consequence.get("world_delta", "The scenario state has changed.")
+    delta = int(consequence["severity_delta"])
 
-    if persona == "VP Operations":
-        if action_type == "restart_checkout":
-            return "Restarting before database ownership is clear increases business exposure. I need a safer recovery path now."
-        if consequence["severity_delta"] < 0:
-            return "The risk is moving in the right direction. Keep the update cadence tight and quantify remaining exposure."
-        return f"Current exposure still touches {affected}. State the next decision point clearly."
+    if delta > 0:
+        return (
+            f"As {role}, I see risk increasing across {affected}. "
+            f"{action} needs a safer boundary and a named next checkpoint. "
+            f"My response is {style}."
+        )
+    if delta < 0:
+        return (
+            f"As {role}, I can support this direction. {outcome} "
+            f"Keep the evidence, owner, and next checkpoint explicit."
+        )
+    return (
+        f"As {role}, I need clearer evidence before the next decision. "
+        f"{outcome} Confirm what changes for {affected} and who owns the checkpoint."
+    )
 
-    if persona == "Product Manager":
-        if action_type == "gradual_restore":
-            return "A staged restore gives us a customer-safe message. Confirm what user paths remain blocked."
-        if consequence["severity_delta"] > 0:
-            return "The customer impact story is getting worse. We need a clear explanation before the next status update."
-        return "I can work with this plan if we keep support informed and avoid overpromising recovery time."
 
-    if persona == "Database Lead":
-        if action_type == "freeze_db_writes":
-            return "Freezing writes is the right control. I will validate the primary writer and replication health."
-        if action_type in {"restart_checkout", "ignore_database_symptoms", "failover_without_validation"}:
-            return "That path risks data inconsistency. We need writer ownership evidence before more traffic changes."
-        return "I need traces, write conflict counts, and replication status to confirm the recovery path."
+def _pressure_profile(value: str) -> str:
+    normalized = value.lower()
+    return normalized if normalized in PRESSURE_OFFSETS else "medium"
 
-    if action_type == "escalate_incident_command":
-        return "Support can align customer messaging once owners, checkpoints, and known impact are explicit."
-    if consequence["severity_delta"] > 0:
-        return "Tickets are rising and the explanation is not stable yet. Give us the current customer-facing statement."
-    return "Support can hold the line if the next update includes impact, action owner, and checkpoint time."
+
+def _voice_style(communication_style: str, pressure_profile: str) -> str:
+    style = communication_style.lower()
+    if "support" in style or "empathetic" in style:
+        return "supportive"
+    if "analytical" in style or "technical" in style or "precise" in style:
+        return "analytical"
+    if "urgent" in style or pressure_profile in {"high", "critical"}:
+        return "urgent"
+    return "calm"
+
+
+def _avatar_style(index: int) -> str:
+    return (
+        "holographic-operator",
+        "holographic-stakeholder",
+        "holographic-specialist",
+        "holographic-observer",
+    )[(index - 1) % 4]
+
+
+def _title_from_identifier(value: str) -> str:
+    normalized = value.removeprefix("ROLE-").replace("-", " ").replace("_", " ")
+    return normalized.title() or "Operator"

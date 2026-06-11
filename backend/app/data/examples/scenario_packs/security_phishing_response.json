@@ -1,0 +1,68 @@
+{
+  "scenario_id": "SCN-SEC-001",
+  "title": "Suspicious inbox campaign response",
+  "industry": "Business services",
+  "role_id": "ROLE-SEC",
+  "difficulty": "standard",
+  "estimated_minutes": 9,
+  "data_classification": "sanitized-training",
+  "business_context": "A fictional workforce reports a coordinated suspicious-message campaign while identity telemetry shows unusual session behavior.",
+  "systems": ["SVC-identity", "SVC-observability", "SVC-payments"],
+  "initial_stakes": "Several sanitized training accounts show risky sign-in patterns and business operations need a controlled response.",
+  "personas": [
+    {"persona": "Security Lead", "role": "Incident owner", "communication_style": "precise", "pressure_profile": "high"},
+    {"persona": "VP Operations", "role": "Business command", "communication_style": "urgent", "pressure_profile": "medium"},
+    {"persona": "Support Lead", "role": "Workforce communications", "communication_style": "direct", "pressure_profile": "medium"}
+  ],
+  "turns": [
+    {
+      "turn_id": "T1",
+      "situation": "Multiple users report similar suspicious messages and identity alerts are increasing.",
+      "options": [
+        {"id": "OPT-SEC-1A", "label": "Correlate identity and message telemetry", "description": "Confirm campaign scope before broad containment.", "action_type": "custom_security_correlate", "competencies": ["SK-security-operations", "SK-observability"], "risk_effect": "decrease", "expected_outcome": "The response team establishes a defensible incident scope."},
+        {"id": "OPT-SEC-1B", "label": "Wait for more user reports", "description": "Delay triage until the campaign produces more evidence.", "action_type": "custom_security_wait", "competencies": ["SK-observability"], "risk_effect": "increase", "expected_outcome": "Potential exposure expands while containment is delayed."}
+      ],
+      "evaluation_focus": ["SK-security-operations", "SK-observability"]
+    },
+    {
+      "turn_id": "T2",
+      "situation": "Telemetry identifies a bounded set of suspicious sessions and message indicators.",
+      "options": [
+        {"id": "OPT-SEC-2A", "label": "Contain suspicious sessions and preserve evidence", "description": "Revoke affected sessions while retaining investigation artifacts.", "action_type": "custom_security_contain", "competencies": ["SK-security-operations", "SK-incident-triage"], "risk_effect": "decrease", "expected_outcome": "Active exposure is reduced without losing investigation context."},
+        {"id": "OPT-SEC-2B", "label": "Reset every workforce account", "description": "Apply broad disruption before validating affected scope.", "action_type": "custom_security_broad_reset", "competencies": ["SK-security-operations"], "risk_effect": "increase", "expected_outcome": "Operational disruption grows beyond the validated scope."}
+      ],
+      "evaluation_focus": ["SK-security-operations", "SK-incident-triage"]
+    },
+    {
+      "turn_id": "T3",
+      "situation": "Business leaders need a clear update while investigation confidence is still developing.",
+      "options": [
+        {"id": "OPT-SEC-3A", "label": "Open incident command with scoped facts", "description": "Communicate known impact, uncertainty, and next checkpoint.", "action_type": "escalate_incident_command", "competencies": ["SK-communication", "SK-escalation-judgment"], "risk_effect": "decrease", "expected_outcome": "Stakeholders align without overstating investigation certainty."},
+        {"id": "OPT-SEC-3B", "label": "Announce a confirmed breach", "description": "State a conclusion before evidence supports it.", "action_type": "custom_security_overstate", "competencies": ["SK-communication"], "risk_effect": "increase", "expected_outcome": "The response creates avoidable trust and governance risk."}
+      ],
+      "evaluation_focus": ["SK-communication", "SK-escalation-judgment"]
+    },
+    {
+      "turn_id": "T4",
+      "situation": "Containment is holding and analysts must validate whether persistence remains.",
+      "options": [
+        {"id": "OPT-SEC-4A", "label": "Correlate sign-ins, session revocation, and endpoint signals", "description": "Verify that suspicious activity has stopped across controls.", "action_type": "correlate_observability", "competencies": ["SK-observability", "SK-security-operations"], "risk_effect": "decrease", "expected_outcome": "The team gains evidence that containment is effective."},
+        {"id": "OPT-SEC-4B", "label": "Close the incident after session revocation", "description": "End response before checking for continued activity.", "action_type": "custom_security_close_early", "competencies": ["SK-security-operations"], "risk_effect": "increase", "expected_outcome": "Residual activity may remain undetected."}
+      ],
+      "evaluation_focus": ["SK-observability", "SK-security-operations"]
+    },
+    {
+      "turn_id": "T5",
+      "situation": "No new suspicious sessions appear and the response must transition to recovery.",
+      "options": [
+        {"id": "OPT-SEC-5A", "label": "Restore access in stages and publish recovery guidance", "description": "Re-enable affected workflows with monitoring and clear workforce instructions.", "action_type": "gradual_restore", "competencies": ["SK-security-operations", "SK-communication"], "risk_effect": "decrease", "expected_outcome": "Operations resume with monitored security controls."},
+        {"id": "OPT-SEC-5B", "label": "Remove all temporary controls immediately", "description": "Return to baseline without a monitored recovery window.", "action_type": "custom_security_remove_controls", "competencies": ["SK-security-operations"], "risk_effect": "increase", "expected_outcome": "Recovery proceeds without evidence that controls remain effective."}
+      ],
+      "evaluation_focus": ["SK-security-operations", "SK-communication"]
+    }
+  ],
+  "success_criteria": ["Scope the campaign using evidence", "Contain suspicious sessions", "Communicate uncertainty accurately", "Verify control effectiveness"],
+  "failure_modes": ["Delay containment", "Overstate incident conclusions", "Close before validating residual activity"],
+  "knowledge_refs": ["RUNBOOK-INCIDENT-ESCALATION", "MANAGER-READINESS-RUBRIC"],
+  "tags": ["security", "phishing-response", "identity", "containment"]
+}

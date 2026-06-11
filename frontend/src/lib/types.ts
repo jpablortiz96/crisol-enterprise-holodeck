@@ -21,6 +21,91 @@ export type ScenarioSummary = {
   estimated_minutes: number;
   data_classification: "sanitized-training";
   tags: string[];
+  personas: PersonaMetadata[];
+  source: "workspace" | "example";
+};
+
+export type PersonaMetadata = {
+  persona: string;
+  role: string;
+  communication_style: string;
+  pressure_profile: string;
+  voice_style: string;
+  avatar_style: string;
+};
+
+export type WorkspaceConfig = {
+  workspace_id: string;
+  workspace_name: string;
+  organization_name: string;
+  industry: string;
+  data_mode: string;
+  load_examples: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type WorkspaceStatus = {
+  workspace: WorkspaceConfig;
+  scenario_count: number;
+  knowledge_count: number;
+  role_count: number;
+  skill_count: number;
+  profile_count: number;
+  load_examples: boolean;
+  is_empty: boolean;
+};
+
+export type WorkspaceWalkthrough = {
+  steps: Array<{
+    step: number;
+    title: string;
+    status: "complete" | "pending";
+  }>;
+  next_recommended_action: string;
+};
+
+export type KnowledgeDocument = {
+  file_name: string;
+  title: string;
+  content?: string;
+  size: number;
+  data_classification: "sanitized-training";
+};
+
+export type WorkspaceRole = {
+  role_id: string;
+  title: string;
+  description?: string;
+  required_skills: string[];
+  data_classification: "sanitized-training";
+};
+
+export type WorkspaceSkill = {
+  skill_id: string;
+  name: string;
+  description?: string;
+  data_classification: "sanitized-training";
+};
+
+export type WorkspaceProfile = {
+  profile_id: string;
+  display_name: string;
+  role_id: string;
+  context: string;
+  data_classification: "sanitized-training";
+};
+
+export type WorkspaceTemplates = {
+  workspace_templates: Array<{
+    template_id: string;
+    name: string;
+    description: string;
+  }>;
+  scenario_templates: Array<Record<string, unknown> & {
+    scenario_id: string;
+    title: string;
+  }>;
 };
 
 export type TelemetrySummary = {
@@ -55,8 +140,7 @@ export type VoiceStatusResponse = {
   voices: Record<string, string>;
 };
 
-export type NPCReaction = {
-  persona: string;
+export type NPCReaction = PersonaMetadata & {
   tone: string;
   message: string;
   pressure_level: number;
@@ -230,6 +314,7 @@ export type SimulationRun = {
     data_classification?: string;
     intro?: string;
     citations?: Citation[];
+    personas: PersonaMetadata[];
   };
   turns: TurnRecord[];
   timeline: TimelineResponse;
@@ -262,6 +347,19 @@ export type StreamStatus = "idle" | "connecting" | "live" | "completed" | "error
 export type PlaybackStatus = "idle" | "buffering" | "playing" | "paused" | "completed" | "error";
 export type PlaybackSpeed = 0.75 | 1 | 1.25;
 export type DisplayMode = "standard" | "recording";
+export type AppSection =
+  | "command-center"
+  | "workspace-setup"
+  | "scenario-studio"
+  | "evaluation-room"
+  | "results-center"
+  | "tools-readiness";
+
+export type ScenarioValidationResult = {
+  valid: boolean;
+  scenario_id?: string;
+  errors: string[];
+};
 
 export type ManagerFragilityMap = {
   generated_at: string;

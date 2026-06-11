@@ -6,6 +6,7 @@ from typing import Any
 from app.insights.manager import build_fragility_map
 from app.orchestration.turn_loop import run_simulation
 from app.scenarios.library import list_scenarios
+from app.workspace.config import examples_enabled_for_validation
 
 
 BACKEND_ROOT = Path(__file__).resolve().parents[2]
@@ -56,20 +57,21 @@ def _validated_runtime_directory(directory: Path) -> Path:
 
 
 def _seed_sessions() -> list[dict[str, Any]]:
-    scenarios = {scenario["scenario_id"]: scenario for scenario in list_scenarios()}
-    sessions = []
-    for scenario_id in SEED_SCENARIO_IDS:
-        scenario = scenarios.get(scenario_id)
-        if scenario is None:
-            raise ValueError(f"Required seed scenario is unavailable: {scenario_id}")
-        sessions.append(
-            run_simulation(
-                role_id=scenario["role_id"],
-                scenario_seed=scenario_id,
-                auto_mode=True,
+    with examples_enabled_for_validation():
+        scenarios = {scenario["scenario_id"]: scenario for scenario in list_scenarios()}
+        sessions = []
+        for scenario_id in SEED_SCENARIO_IDS:
+            scenario = scenarios.get(scenario_id)
+            if scenario is None:
+                raise ValueError(f"Required seed scenario is unavailable: {scenario_id}")
+            sessions.append(
+                run_simulation(
+                    role_id=scenario["role_id"],
+                    scenario_seed=scenario_id,
+                    auto_mode=True,
+                )
             )
-        )
-    return sessions
+        return sessions
 
 
 def main() -> None:

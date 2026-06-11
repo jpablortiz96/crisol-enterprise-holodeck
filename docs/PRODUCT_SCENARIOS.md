@@ -1,16 +1,22 @@
 # Product Scenarios
 
-CRISOL scenario packs are manually authored JSON documents stored under `backend/app/data/scenario_packs`. Packs use fictional identifiers and sanitized training data.
+CRISOL scenario packs are JSON documents stored in one of two locations:
+
+- Generated customer scenarios: `backend/app/data/workspace/scenario_packs`
+- Versioned optional examples: `backend/app/data/examples/scenario_packs`
+
+The product loads workspace scenarios first. Example scenarios are included only when `load_examples` is enabled. Packs use fictional identifiers and sanitized training data.
 
 ## Authoring Workflow
 
-1. Copy an existing pack.
+1. Start from the Scenario Studio starter JSON or load a scenario template.
 2. Assign a unique fictional `SCN-*` identifier.
 3. Use only system identifiers defined by the local ontology.
-4. Define personas, five operational turns, options, expected outcomes, success criteria, and failure modes.
+4. Define scenario-specific personas when needed, plus operational turns, options, expected outcomes, success criteria, and failure modes.
 5. Reference approved local knowledge identifiers.
-6. Run `python -m app.scenarios.importer`.
-7. Review the scenario in the Scenario Library before distribution.
+6. Save through Scenario Studio or `POST /workspace/scenarios`.
+7. Run `python -m app.scenarios.importer` to validate the versioned example pack when examples change.
+8. Review the workspace scenario in Scenario Library before use.
 
 ## Schema
 
@@ -28,10 +34,12 @@ CRISOL scenario packs are manually authored JSON documents stored under `backend
   "initial_stakes": "Operational stakes without real customer details.",
   "personas": [
     {
-      "persona": "VP Operations",
-      "role": "Executive command",
-      "communication_style": "urgent",
-      "pressure_profile": "high"
+      "persona": "Customer Recovery Lead",
+      "role": "Customer communication owner",
+      "communication_style": "direct",
+      "pressure_profile": "high",
+      "voice_style": "urgent",
+      "avatar_style": "customer"
     }
   ],
   "turns": [
@@ -58,6 +66,10 @@ CRISOL scenario packs are manually authored JSON documents stored under `backend
   "tags": ["operations"]
 }
 ```
+
+`personas` is optional. When absent or empty, CRISOL creates a deterministic generic roster from the scenario role, industry, tags, and difficulty. Explicit personas are normalized so every reaction includes `persona`, `role`, `communication_style`, `pressure_profile`, `voice_style`, and `avatar_style`.
+
+Voice selection is based on `voice_style` and pressure rather than persona names. Supported default styles are `calm`, `urgent`, `analytical`, and `supportive`.
 
 ## Risk Effects
 

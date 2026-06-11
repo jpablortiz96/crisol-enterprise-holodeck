@@ -104,7 +104,12 @@ export function ScenarioFeed({ turns, activeTurnNumber }: ScenarioFeedProps) {
                       {turn.npc_reactions.map((reaction) => (
                         <div key={`${turn.turn_number}-${reaction.persona}`} className="npc-reaction-line">
                           <div className="flex items-center justify-between gap-2">
-                            <p className="text-[11px] font-semibold text-white">{reaction.persona}</p>
+                            <div className="min-w-0">
+                              <p className="text-[11px] font-semibold text-white">{reaction.persona}</p>
+                              <p className="truncate text-[9px] text-slate-600">
+                                {reaction.role} / {reaction.communication_style}
+                              </p>
+                            </div>
                             <span className="text-[9px] uppercase text-slate-600">
                               {reaction.voice?.provider === "azure-speech" ? "Azure Speech" : "Text fallback"}
                             </span>

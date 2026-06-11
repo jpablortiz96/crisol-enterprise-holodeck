@@ -1,6 +1,8 @@
 from app.orchestration.turn_loop import run_simulation
+from app.workspace.config import with_examples_for_validation
 
 
+@with_examples_for_validation
 def main() -> None:
     session = run_simulation(role_id="ROLE-SRE", auto_mode=True)
     turns = session["turns"]

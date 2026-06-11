@@ -15,6 +15,7 @@ from app.replay.time_travel import branch_from_session
 from app.scoring.competence_report import generate_competence_report
 from app.storage.session_store import load_session, save_session
 from app.telemetry.events import emit_event
+from app.workspace.config import examples_enabled_for_validation
 
 
 _ACTIVE_SESSIONS: dict[str, dict[str, Any]] = {}
@@ -235,35 +236,36 @@ def call_registered_tool(name: str, arguments: dict[str, Any] | None = None) -> 
 
 
 def run_local_demo() -> dict[str, Any]:
-    started = start_simulacrum()
-    session_id = started["session_id"]
-    situation = get_situation(session_id)
-    decision = make_decision(session_id, "Freeze writes and identify primary database writer")
-    report = get_competence_report(session_id)["report"]
-    return {
-        "tools": [tool["name"] for tool in list_registered_tools()],
-        "started": {
-            "session_id": session_id,
-            "scenario_id": started["scenario"]["id"],
-            "current_situation": started["current_situation"],
-        },
-        "situation": {
-            "current_turn": situation["current_turn"],
-            "revenue_at_risk": situation["revenue_at_risk"],
-            "citation_count": len(situation["citations"]),
-        },
-        "decision": {
-            "decision": decision["decision"]["label"],
-            "new_severity": decision["consequence"]["new_severity"],
-            "world_delta": decision["world_delta"],
-        },
-        "competence_report": {
-            "session_id": report["session_id"],
-            "overall_score": report["overall_score"],
-            "readiness_band": report["readiness_band"],
-            "evidence_count": len(report["evidence_trail"]),
-        },
-    }
+    with examples_enabled_for_validation():
+        started = start_simulacrum()
+        session_id = started["session_id"]
+        situation = get_situation(session_id)
+        decision = make_decision(session_id, "Freeze writes and identify primary database writer")
+        report = get_competence_report(session_id)["report"]
+        return {
+            "tools": [tool["name"] for tool in list_registered_tools()],
+            "started": {
+                "session_id": session_id,
+                "scenario_id": started["scenario"]["id"],
+                "current_situation": started["current_situation"],
+            },
+            "situation": {
+                "current_turn": situation["current_turn"],
+                "revenue_at_risk": situation["revenue_at_risk"],
+                "citation_count": len(situation["citations"]),
+            },
+            "decision": {
+                "decision": decision["decision"]["label"],
+                "new_severity": decision["consequence"]["new_severity"],
+                "world_delta": decision["world_delta"],
+            },
+            "competence_report": {
+                "session_id": report["session_id"],
+                "overall_score": report["overall_score"],
+                "readiness_band": report["readiness_band"],
+                "evidence_count": len(report["evidence_trail"]),
+            },
+        }
 
 
 def _complete_session(entry: dict[str, Any]) -> dict[str, Any]:
