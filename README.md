@@ -1,223 +1,329 @@
-# CRISOL - Enterprise Holodeck
+<p align="center">
+  <img src="docs/assets/crisol-hero.svg" alt="CRISOL Enterprise Holodeck" width="100%">
+</p>
 
-CRISOL is a revenue-aware readiness platform for practicing high-stakes enterprise decisions before they affect production.
+# CRISOL - The Enterprise Holodeck
 
-## What It Does
+**A configurable enterprise simulation platform that turns organizational
+knowledge into live decision drills, measurable competence, and manager-ready
+risk insight.**
 
-CRISOL turns role requirements, system dependencies, business exposure, certifications, and sanitized scenario packs into measurable operational practice. Participants make decisions inside a branching simulation, receive synchronized stakeholder pressure, and finish with cited competence evidence and manager-level readiness signals.
+[Open the live product](https://crisol-web.jollysmoke-c46778ba.eastus.azurecontainerapps.io)
+| [Backend health](https://crisol-api.jollysmoke-c46778ba.eastus.azurecontainerapps.io/health)
+| [Grounding status](https://crisol-api.jollysmoke-c46778ba.eastus.azurecontainerapps.io/grounding/status)
 
-## Why It Matters
+## The problem
 
-Course completion does not prove judgment under pressure. CRISOL evaluates how a participant detects risk, controls business impact, communicates, escalates, and recovers when several systems and stakeholders are moving at once.
+Organizations do not fail because knowledge does not exist. They fail because
+the right person does not see, trust, or act on the right knowledge under
+pressure.
 
-The platform is designed for:
+Traditional training measures recall. CRISOL measures decisions under
+pressure: what someone notices, which action they own, how they communicate,
+when they escalate, and how their choices change operational and commercial
+exposure.
 
-- Operational readiness and incident-response practice.
-- Role-transition and certification preparation.
-- Cross-functional decision training.
-- Evidence-based coaching and manager planning.
-- Safe exploration of alternative decisions without production changes.
+Skill gaps are usually discovered after an incident, escalation, outage,
+customer churn event, audit finding, failed launch, or operational loss. By
+then, the organization is paying for a readiness gap it could not see.
 
-## Product Capabilities
+## The cost of invisible readiness gaps
 
-- Empty-by-default configurable enterprise workspace.
-- Validated workspace export and import packages.
-- Guided first-customer walkthrough with actionable setup state.
-- Scenario-driven NPC personas with deterministic generic fallbacks.
-- Scenario, knowledge, role, skill, and evaluated-profile studios.
-- Workspace Scenario Library with optional validated example packs.
-- One-shot and synchronized live simulations.
-- Branching consequence timeline with severity and revenue deltas.
-- Azure Speech NPC room with text fallback.
-- Cited Competence Score and targeted coaching plan.
-- Aggregate Manager Fragility Map without personal data.
-- Deterministic Time-Travel Replay projections.
-- Six-tool MCP surface for reusable scenario operations.
-- Grounded retrieval boundaries with local fallback.
-- Structured local telemetry and release evaluation.
-- Recording Mode optimized for 16:9 product capture.
+- Delayed escalation when uncertainty is highest.
+- Wrong or ambiguous decision ownership.
+- Fragmented knowledge across documents, systems, and teams.
+- Critical judgment that remains undocumented.
+- Repeated incidents with the same underlying failure pattern.
+- Inconsistent onboarding and role-transition outcomes.
+- Avoidable revenue leakage during operational disruption.
+- Brand and customer trust risk from uneven response quality.
 
-## Architecture
+**CRISOL is designed to help leaders model avoidable cost before it becomes
+real loss.**
 
-CRISOL uses a Next.js War Room and a FastAPI service. The backend combines a NetworkX ontology, a deterministic scenario director, consequence and scoring services, local ignored session storage, replay projection, speech synthesis, MCP tools, evaluation checks, and allowlisted telemetry.
+## The solution
 
-```text
-Next.js War Room
-  -> FastAPI product API
-     -> Workspace configuration and Scenario Library
-     -> Ontology and business-impact graph
-     -> Grounding and citation adapters
-     -> Competence and manager insights
-     -> Replay, MCP, voice, evaluation, telemetry
-     -> Ignored local runtime storage
+CRISOL creates a safe enterprise holodeck where teams can configure an
+organization workspace, connect sanitized knowledge, define roles and skills,
+author scenarios, assemble pressure-tested personas, and evaluate decisions
+through live incident-room simulations.
+
+Every run produces an evidence trail. Decisions branch into consequences.
+Competence is scored against scenario expectations. Managers receive aggregate
+fragility signals, and teams can replay an alternate decision from any saved
+node without touching production systems.
+
+## Product walkthrough
+
+### Command Center
+
+The operating view for workspace readiness, configured assets, recommended
+actions, and access to the core evaluation workflow.
+
+![CRISOL Command Center](docs/assets/screenshots/00-command-center.png)
+
+### Empty Workspace Mode
+
+CRISOL starts clean. Teams can build their own workspace or apply a reusable,
+sanitized configuration.
+
+![CRISOL empty workspace](docs/assets/screenshots/01-empty-workspace.png)
+
+### Workspace Setup
+
+Configure organization context, roles, skills, knowledge documents, evaluated
+profiles, and reusable workspace templates.
+
+![CRISOL Workspace Setup](docs/assets/screenshots/02-workspace-setup.png)
+
+### Scenario Studio
+
+Author business context, personas, pressure profiles, operational turns,
+decision options, expected outcomes, and evaluation criteria.
+
+![CRISOL Scenario Studio](docs/assets/screenshots/03-scenario-studio.png)
+
+### Evaluation Room
+
+Run a synchronized incident simulation with scenario-driven personas,
+branching consequences, operational stakes, cited evidence, and a live
+competence signal.
+
+![CRISOL Evaluation Room](docs/assets/screenshots/04-evaluation-room.png)
+
+### Results Center
+
+Review the competence report, evidence trail, skill gaps, coach plan, manager
+fragility map, and alternate decision branches.
+
+![CRISOL Results Center](docs/assets/screenshots/05-results-center.png)
+
+### Tools & Readiness
+
+Inspect service health, telemetry boundaries, reusable MCP tools, evaluation
+status, and operational safeguards.
+
+![CRISOL Tools and Readiness](docs/assets/screenshots/06-tools-readiness.png)
+
+### Live grounding status
+
+The public API reports the active grounding boundary without exposing
+credentials or internal endpoints.
+
+![CRISOL live grounding status](docs/assets/screenshots/07-grounding-status.png)
+
+## Core capabilities
+
+- **Empty Workspace Mode** - Begin without inherited organization data.
+- **Configurable Organization Workspace** - Model organization, industry, and
+  workspace context.
+- **Role & Skill Builder** - Define role expectations and measurable skills.
+- **Knowledge Studio** - Add sanitized operational guidance and cited evidence.
+- **Scenario Studio** - Build reusable decision drills and evaluation paths.
+- **Scenario-driven NPC Personas** - Configure stakeholder roles,
+  communication styles, pressure profiles, and voice styles.
+- **Live Evaluation Room** - Run one-shot or synchronized simulations.
+- **Azure Speech Incident Room** - Use Azure Speech when configured, with a
+  synchronized text fallback.
+- **Branching Consequence Timeline** - See severity, exposure, and system
+  effects across each decision.
+- **Competence Score** - Measure weighted decision dimensions.
+- **Evidence Trail** - Preserve cited observations behind every result.
+- **Coach Plan** - Turn gaps into targeted practice.
+- **Manager Fragility Map** - Aggregate readiness risk without requiring PII.
+- **Time-Travel Replay** - Project an alternate path from a saved decision.
+- **MCP Tool Surface** - Invoke CRISOL capabilities through reusable tools.
+- **Telemetry / Eval / Security Guardrails** - Validate release boundaries,
+  data classification, citations, and repository hygiene.
+- **Workspace Export / Import** - Move validated workspace packages without
+  committing generated runtime data.
+
+## Microsoft and Azure architecture
+
+CRISOL runs as two production containers in Azure:
+
+- **Azure Container Apps** hosts `crisol-web` and `crisol-api`.
+- **Azure Container Apps Environment** `crisol-env` provides the shared
+  managed runtime.
+- **Azure Container Registry** stores deployment images.
+- **Azure AI Search** provides live grounded retrieval over the
+  `crisol-knowledge` index.
+- **Microsoft Foundry** project and `gpt-4o` deployment configuration satisfy
+  the live Foundry IQ readiness boundary.
+- **Azure Speech** is the optional voice provider for scenario personas; text
+  fallback keeps evaluations available when speech is not configured.
+- **Log Analytics** supports platform and container visibility.
+- **MCP-compatible tools** expose scenario, decision, replay, report, and
+  manager-insight actions programmatically.
+
+Azure AI Search performs live retrieval over sanitized knowledge. Local cited
+retrieval remains available for offline development and cloud failure
+fallback. Simulations do not modify production systems.
+
+See [Architecture](docs/ARCHITECTURE.md) and the
+[full architecture diagram](docs/ARCHITECTURE_DIAGRAM.md).
+
+## Live production status
+
+Verified on **June 11, 2026**:
+
+| Signal | Production value |
+| --- | --- |
+| Frontend | [crisol-web](https://crisol-web.jollysmoke-c46778ba.eastus.azurecontainerapps.io) |
+| Backend | [crisol-api](https://crisol-api.jollysmoke-c46778ba.eastus.azurecontainerapps.io) |
+| Backend health | `ok` |
+| Grounding mode | `live-foundry-iq` |
+| Search index | `crisol-knowledge` |
+| Foundry project configured | Yes |
+| Model deployment configured | Yes |
+| Azure AI Search configured | Yes |
+| Grounding warnings | None |
+
+The status endpoint performs a live Search probe before reporting a live
+grounding mode.
+
+## Architecture diagram
+
+```mermaid
+flowchart LR
+    User[Operators, candidates, managers] --> Web[crisol-web<br/>Next.js]
+    Web --> API[crisol-api<br/>FastAPI]
+    API --> Simulation[Scenario orchestration<br/>consequences, scoring, replay]
+    API --> Search[Azure AI Search<br/>crisol-knowledge]
+    API --> Foundry[Microsoft Foundry<br/>project + gpt-4o deployment]
+    API -. optional .-> Speech[Azure Speech]
+    API --> Runtime[Sanitized workspace<br/>sessions, telemetry, audio]
+    Web --> Logs[Log Analytics]
+    API --> Logs
 ```
 
-Architecture details are documented in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+## How CRISOL works
 
-## Microsoft Stack And IQ Integration
+1. **Start empty** with no inherited organization context.
+2. **Configure the workspace** with organization, role, and skill definitions.
+3. **Add knowledge** using sanitized operational documents.
+4. **Build a scenario** around a decision under pressure.
+5. **Define personas** that represent scenario stakeholders.
+6. **Evaluate a candidate** through a live or one-shot simulation.
+7. **Review results** with cited competence evidence and coaching.
+8. **Replay an alternate branch** from a saved decision node.
+9. **Export insights** through workspace packages and reports.
 
-- **Azure Speech** provides NPC voice synthesis when configured.
-- **Microsoft Learn MCP** provides live certification grounding with bounded local fallback.
-- **Foundry IQ** has an adapter boundary for approved knowledge retrieval; live indexing requires Azure configuration.
-- **Fabric IQ** maps to the local ontology boundary and depends on target capacity for a live adapter.
-- **Work IQ** uses sanitized local work-signal fixtures until connected to approved enterprise tenant signals.
-- **Azure Container Apps or App Service** are the recommended backend deployment targets.
+## Why it is different
 
-Every scored claim and grounded answer retains citations or returns a bounded fallback result.
+CRISOL is not a chatbot. It is not a quiz. It is not a dashboard, and it is
+not static training.
 
-## Workspace Setup
+**CRISOL is an interactive operating simulator for organizational judgment.**
 
-CRISOL starts empty. Initialize or inspect the local workspace from `backend`:
+It connects knowledge, business stakes, stakeholder pressure, consequences,
+evidence, and coaching in one decision loop.
 
-```powershell
-python -m app.workspace.setup --empty
-python -m app.workspace.setup --status
-python -m app.workspace.setup --with-examples
-python -m app.workspace.setup --creator-operations-template
-python -m app.workspace.setup --eduky-template
-```
+## Responsible data and security
 
-The browser setup flow exposes Start Empty, generic workspace packs, Creator Operations Readiness, the optional example pack, and a separate optional customer-specific pack. Organization name, industry, and workspace name can be configured independently of any template. Generated workspace files stay under ignored local storage and are not committed.
+- Repository examples use sanitized enterprise training data.
+- Simulations perform no production changes.
+- Secrets are not stored in source control.
+- `.env` files are ignored.
+- Generated sessions, audio, telemetry, exports, dependencies, and build
+  output are ignored.
+- Local cited fallback remains available without cloud credentials.
+- Release validation scans for credentials and sensitive-data patterns.
+- No PII is required for scenario evaluation or manager insights.
+- Workspace content is isolated behind validated storage and package
+  boundaries.
 
-- [Empty workspace mode](docs/EMPTY_WORKSPACE.md)
-- [Workspace setup](docs/WORKSPACE_SETUP.md)
-- [First customer workspace](docs/FIRST_CUSTOMER_WORKSPACE.md)
-- [Product walkthrough](docs/PRODUCT_WALKTHROUGH.md)
-- [Workspace packages](docs/WORKSPACE_PACKAGES.md)
-- [Eduky first-customer walkthrough](docs/FIRST_CUSTOMER_EDUKY.md)
+See [Security](docs/SECURITY.md) and
+[Environment configuration](docs/ENVIRONMENT.md).
 
-## Workspace Packages
+## Local setup
 
-Export, inspect, and import the active sanitized workspace from `backend`:
-
-```powershell
-python -m app.workspace.package --export
-python -m app.workspace.package --summary .crisol_exports/wpk-example.json
-python -m app.workspace.package --import .crisol_exports/wpk-example.json
-```
-
-Exports are stored under ignored local storage at `backend/.crisol_exports/`. Import validates the complete package before replacing the generated workspace and keeps examples disabled.
-
-## Scenario Library
-
-Workspace scenarios are saved under ignored local storage at `backend/app/data/workspace/scenario_packs/`. Versioned examples are stored separately under `backend/app/data/examples/scenario_packs/` and appear only when example mode is enabled. Each pack declares fictional identifiers, role, industry, systems, decisions, success criteria, failure modes, and knowledge references. Personas are scenario-specific; when omitted, CRISOL derives a deterministic generic roster from the scenario context.
+### Backend
 
 ```powershell
 cd backend
-python -m app.scenarios.importer
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+python -m app.validate_release
+python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8010
 ```
 
-The frontend selector drives both standard and live simulation runs. Authoring rules are in [docs/PRODUCT_SCENARIOS.md](docs/PRODUCT_SCENARIOS.md).
+### Frontend
 
-## Azure Speech NPC Room
-
-When `AZURE_SPEECH_KEY` and `AZURE_SPEECH_REGION` are available to the backend process, NPC reactions are synthesized and cached under ignored local runtime storage. Without valid configuration, the same scenario remains fully usable through synchronized text fallback.
-
-Voice credentials stay server-side and are never returned to the browser.
-
-## MCP Tool Surface
-
-CRISOL exposes six local tools:
-
-- `start_simulacrum`
-- `get_situation`
-- `make_decision`
-- `branch_from`
-- `get_competence_report`
-- `get_manager_fragility_map`
+Open a second PowerShell terminal:
 
 ```powershell
-cd backend
-python -m app.mcp_server.server --list-tools
-python -m app.mcp_server.server --serve --transport stdio
+cd frontend
+npm install
+$env:NEXT_PUBLIC_CRISOL_API_URL="http://127.0.0.1:8010"
+npm run dev -- -p 3001
 ```
 
-The web product exposes the same contracts through its Tool Preview panel.
+Open `http://127.0.0.1:3001`.
 
-## Time-Travel Replay
+## Azure deployment
 
-Time-Travel Replay starts from a saved decision node, substitutes an alternative action, and re-simulates the remaining path. It compares competence score, severity, revenue at risk, reasoning, and citations.
+The production topology uses Azure Container Apps with separate frontend and
+backend images. Deployment commands use placeholders and secret references;
+credentials are never embedded in images or documentation.
 
-Replay is a deterministic projection for training analysis. It is not an exact production rollback.
+See [Azure deployment commands](docs/AZURE_DEPLOYMENT_COMMANDS.md) and
+[Foundry IQ setup](docs/FOUNDRY_IQ_SETUP.md).
 
-## Competence Score And Manager Fragility Map
-
-The Competence Score includes weighted dimensions, cited evidence, failure modes, skill gaps, certification alignment, and next actions. The Manager Fragility Map aggregates sanitized session evidence by role, dimension, skill, and certification without storing personal profiles.
-
-These outputs support coaching and readiness planning. Human reviewers remain responsible for employment, access, certification, and operational decisions.
-
-## Security And Data Policy
-
-- Repository scenarios and examples use sanitized or synthetic training data.
-- Real customer, employee, contact, payment, credential, and confidential incident data are prohibited.
-- `.env`, virtual environments, generated sessions, audio, telemetry, build output, and dependencies are ignored.
-- Telemetry accepts only an explicit field allowlist.
-- The repository scanner checks credentials, sensitive-data patterns, and product language.
-- CRISOL does not execute production control-plane actions.
-
-See [docs/SECURITY.md](docs/SECURITY.md) and [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md).
-
-## Run Locally
+## Validation
 
 Backend:
 
 ```powershell
 cd backend
-python -m pip install -r requirements.txt
-python -m uvicorn app.main:app --reload
+python -m app.validate_submission
+python -m app.validate_release
+python -m app.validate_foundry_iq
+python -m app.validate_workspace_package
+python -m app.validate_dynamic_personas
 ```
 
 Frontend:
 
 ```powershell
 cd frontend
-npm install
-npm run dev
-```
-
-Open `http://localhost:3000`.
-
-The first launch presents an empty-workspace setup panel. Configure content manually, apply Creator Operations Readiness or another generic template, apply the separate optional customer pack, or enable the example pack.
-
-Recording Mode is available in the command header. It preserves Scenario Library, live simulation, Azure Speech status, citations, revenue impact, timeline, Competence Score, Manager Fragility Map, Time-Travel Replay, and MCP tools while reducing technical recording noise.
-
-## Validation Commands
-
-```powershell
-cd backend
-python -m app.security.scan
-python -m app.validate_workspace_package
-python -m app.validate_dynamic_personas
-python -m app.validate_empty_workspace
-python -m app.validate_release
-python -m app.validate_phase9
-python -m app.validate_phase8
-python -m app.validate_phase7
-python -m app.validate_phase5
-python -m app.validate_phase4
-python -m app.maintenance.reset_local_state --seed-demo
-```
-
-```powershell
-cd frontend
-npm install
 npm run build
 ```
 
-## Deployment Notes
+Screenshot capture:
 
-The backend includes a non-root Python container with a health check. Deployment guidance covers local production mode, Azure Container Apps, Azure App Service, secret stores, health probes, and MCP network controls.
+```powershell
+npm install --prefix tools
+npm exec --prefix tools playwright install chromium
+npm run --prefix tools capture:screenshots
+```
 
-- [Deployment guide](docs/DEPLOYMENT.md)
-- [Docker smoke test](docs/DOCKER_SMOKE_TEST.md)
-- [Release candidate report](docs/RELEASE_CANDIDATE_REPORT.md)
+## Repository hygiene
 
-## Screenshot Placeholders
+The repository excludes generated and sensitive local state:
 
-Capture these release images after running a clean seeded baseline:
+- `.env`
+- `.venv/`
+- `node_modules/`
+- `.next/`
+- `dist/`
+- `backend/.crisol_sessions/`
+- `backend/.crisol_audio/`
+- `backend/.crisol_telemetry/`
+- `backend/.crisol_exports/`
+- generated workspace content
 
-1. War Room in Recording Mode with Scenario Library and Azure Speech status.
-2. Live branching timeline with revenue delta and cited events.
-3. Competence Score beside the Manager Fragility Map.
-4. Time-Travel Replay branch comparison.
-5. MCP Tool Preview with the six-tool registry.
+## Roadmap
+
+- Enterprise SSO.
+- Multi-tenant workspace isolation.
+- HRIS and LMS integration.
+- Richer Foundry Agent Service integration.
+- Scenario marketplace.
+- Manager benchmarking.
+- Audit-ready report export.
+
+## Demo video
+
+**Demo video: coming soon.**

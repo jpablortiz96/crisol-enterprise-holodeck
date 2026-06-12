@@ -1,199 +1,145 @@
-# Architecture
+# CRISOL Architecture
 
-CRISOL models role readiness through a five-agent architecture connected to an ontology graph.
+CRISOL is a production-safe enterprise simulation platform built around a
+Next.js user experience, a FastAPI core, live Azure AI Search grounding, and
+deterministic decision simulation.
 
-## Five-Agent Architecture
+## Design principles
 
-1. Director
+1. **Workspace-first configuration** - Organization context, roles, skills,
+   knowledge, profiles, and scenarios are explicit data boundaries.
+2. **Evidence over assertion** - Results retain citations and decision
+   evidence.
+3. **Pressure-tested judgment** - Evaluation measures action under uncertainty,
+   not content recall.
+4. **Bounded cloud integration** - Live services have explicit readiness and
+   fallback modes.
+5. **No production control plane** - Simulation consequences never execute
+   production changes.
+6. **Sanitized data by default** - Versioned examples and workspace content use
+   sanitized training data.
 
-   Selects the scenario, learner role, business stakes, time pressure, and target competencies.
+## User experience layer
 
-2. NPC Ensemble
+| Surface | Responsibility |
+| --- | --- |
+| Command Center | Workspace readiness, inventory, next actions, and workflow entry points. |
+| Workspace Setup | Organization, role, skill, knowledge, profile, and template configuration. |
+| Scenario Studio | Scenario, persona, turn, decision, and expected-outcome authoring. |
+| Evaluation Room | One-shot and synchronized scenario execution with consequences and evidence. |
+| Results Center | Competence report, coach plan, manager fragility map, and replay. |
+| Tools & Readiness | Health, grounding, telemetry, voice, evaluation, and MCP readiness. |
 
-   Represents synthetic stakeholders such as operations leads, security reviewers, data owners, and managers.
+The frontend is a Next.js application deployed as the `crisol-web` Azure
+Container App. It reads the backend address from
+`NEXT_PUBLIC_CRISOL_API_URL`.
 
-3. Consequence Engine
+## Core platform layer
 
-   Evaluates affected systems, contract exposure, escalation paths, and revenue-at-risk.
+The `crisol-api` FastAPI application owns the platform contracts:
 
-4. Examiner
+- **Workspace Store** validates and stores generated workspace configuration.
+- **Scenario Library** merges workspace scenarios with optional example packs.
+- **Scenario-driven NPC Ensemble** derives stakeholder behavior from the active
+  scenario.
+- **Multi-agent Orchestration** coordinates the Director, NPC Ensemble,
+  Consequence Engine, Examiner, and Coach.
+- **Consequence Engine** models severity, affected systems, contract exposure,
+  and modeled revenue at risk.
+- **Examiner / Competence Report** produces weighted dimensions, evidence,
+  failure modes, skill gaps, and next actions.
+- **Coach** turns observed gaps into targeted practice.
+- **Manager Fragility Map** aggregates sanitized session evidence without PII.
+- **Time-Travel Replay** deterministically projects alternate decision paths.
+- **MCP Tool Surface** exposes six reusable CRISOL operations.
+- **Telemetry / Evaluation / Security Checks** enforce allowlisted telemetry,
+  release contracts, citations, sanitized data, and repository hygiene.
 
-   Scores decisions against expected competencies, role requirements, certifications, and scenario outcomes.
+## Grounding architecture
 
-5. Coach
+`GET /grounding/status` reports the active boundary:
 
-   Converts performance gaps into practice recommendations, study priorities, and follow-up scenarios.
+- `live-foundry-iq` requires a configured Microsoft Foundry project endpoint,
+  model deployment, and a working Azure AI Search configuration.
+- `live-azure-search` indicates working Azure AI Search retrieval without a
+  configured Foundry project endpoint.
+- `local-fallback` indicates missing or unavailable cloud grounding.
 
-## Data Flow
+Azure AI Search provides live retrieval over the `crisol-knowledge` index. The
+index contains only sanitized knowledge records with source metadata and data
+classification. Retrieval preserves the application citation contract.
 
-1. Synthetic JSON data is loaded from `backend/app/data`.
-2. `app.ontology.graph.load_ontology` builds a directed NetworkX graph.
-3. The graph links learners, roles, skills, certifications, systems, contracts, scenarios, and work signals.
-4. Synthetic markdown knowledge files are loaded from `backend/app/data/knowledge`.
-5. `app.grounding.local_knowledge` returns cited local answers from approved synthetic documents.
-6. `app.grounding.foundry_iq` provides the adapter boundary for future live Foundry IQ retrieval.
-7. `app.orchestration.turn_loop` runs the local five-agent simulation loop.
-8. `app.branching.timeline` builds parented branch nodes and edges for replay.
-9. `app.storage.session_store` saves completed sessions under ignored local JSON storage.
-10. `app.scoring.competence_report` converts sessions into cited readiness reports.
-11. `app.insights.manager` aggregates saved sessions into a no-PII fragility map.
-12. `app.grounding.learn_mcp` connects to Microsoft Learn MCP when available and returns a bounded synthetic fallback otherwise.
-13. `app.replay.time_travel` creates deterministic replay projections from saved decision nodes.
-14. `app.mcp_server` exposes six CRISOL capabilities through a local registry and `FastMCP`.
-15. FastAPI endpoints expose health, graph summary, revenue-at-risk, grounding tests, scenario run, live scenario stream, saved sessions, replay, MCP tools, reports, and manager summaries.
-16. The Next.js War-Room consumes the one-shot scenario endpoint, live SSE stream, replay endpoint, and MCP demo endpoint.
-17. `app.scenarios` validates, imports, selects, and normalizes manual scenario packs.
-18. `app.telemetry` records allowlisted local lifecycle events and optionally initializes OpenTelemetry.
-19. `app.eval` verifies groundedness, citation integrity, scenario safety, tools, replay, voice fallback, and product language.
-20. Future phases will add live indexing, hosted agents, and live ontology sources.
+Local cited retrieval remains available for offline development and runtime
+failure fallback. The mode is included in API metadata so the product does not
+claim a cloud path that did not answer the request.
 
-## Local Orchestration Loop
+## Azure runtime
 
-Phase 3 runs a deterministic terminal simulation:
+The verified production resource group contains:
 
-1. The Director selects the SRE scenario and builds each turn context.
-2. The auto learner makes a seeded decision, including an early bad restart decision.
-3. The Consequence Engine computes severity, affected systems, branch nodes, and revenue-at-risk.
-4. The NPC Ensemble reacts to the decision and current severity.
-5. After at least five turns, the Examiner scores competence dimensions.
-6. The Coach returns a micro-learning plan with citations.
+| Resource | Role |
+| --- | --- |
+| Azure Container App `crisol-web` | Public Next.js product surface. |
+| Azure Container App `crisol-api` | Public FastAPI product API. |
+| Container Apps Environment `crisol-env` | Shared managed container runtime. |
+| Azure Container Registry | Image build and storage. |
+| Azure AI Search | Live grounded retrieval for `crisol-knowledge`. |
+| Foundry/AIServices resource and project | Foundry project endpoint and model deployment boundary. |
+| Log Analytics workspace | Container Apps platform and application logs. |
+| Azure Speech | Optional scenario-persona voice synthesis when configured. |
 
-## Branching Timeline
+The current public grounding endpoint reports `live-foundry-iq`. Azure Speech
+remains independently optional; the simulation uses synchronized text fallback
+when speech credentials are absent.
 
-Phase 4 makes the consequence chain replay-ready:
+## Data boundaries
 
-- Every run starts with `NODE-ROOT`.
-- Every learner decision creates a `NODE-###` branch node with `parent_node_id`.
-- Edges carry decision labels for future graph rendering.
-- Consequences include newly affected systems, recovered systems, cascade paths, contract exposure, and revenue deltas.
-- The timeline summary tracks max severity, max revenue-at-risk, final severity, and final revenue-at-risk.
+### Versioned data
 
-The JSON shape is ready for a future ReactFlow frontend, but no frontend is created in this phase.
+- Sanitized example scenario packs.
+- Sanitized example knowledge documents.
+- Ontology fixtures for systems, contracts, skills, roles, and certifications.
+- Validation rules and templates.
 
-## MCP And Replay Layer
+### Generated workspace data
 
-Phase 8 adds two reusable platform interfaces:
+- Workspace configuration.
+- Workspace scenarios and knowledge.
+- Workspace roles, skills, and profiles.
 
-```text
-MCP client or War-Room
-        |
-        +--> CRISOL MCP registry / FastMCP
-        |        |
-        |        +--> Director + Consequence Engine
-        |        +--> Competence Report
-        |        +--> Manager Fragility Map
-        |        +--> Replay Projection
-        |
-        +--> FastAPI replay and MCP endpoints
-                 |
-                 +--> Saved synthetic sessions
-                 +--> Microsoft Learn MCP adapter
-                 +--> Synthetic local knowledge fallback
-```
+Generated workspace content is excluded from Git.
 
-The MCP registry and HTTP endpoints call the same underlying services. The replay layer copies the pre-branch timeline, replaces the selected decision, simulates the remaining path deterministically, and saves a new session. It is a deterministic replay projection, not an exact production rollback.
+### Runtime data
 
-The Learn adapter uses streamable HTTP with a bounded timeout. Live results are marked `learn-mcp`. Unavailable live grounding is marked `local-fallback`, and all fallback content is explicitly synthetic rather than official certification documentation.
+- Completed sessions.
+- Synthesized audio.
+- Allowlisted telemetry.
+- Workspace exports.
 
-## Scenario And Assurance Layer
+Runtime directories are excluded from Git and are not deployment secrets.
 
-Phase 9 adds a manual product scenario boundary:
+## Request flow
 
-```text
-Scenario pack JSON
-      |
-      +--> structure validator
-      +--> sensitive-content validator
-      +--> runtime seed adapter
-                 |
-                 +--> Director
-                 +--> Consequence Engine
-                 +--> Streaming and replay
+1. The browser loads `crisol-web`.
+2. The frontend initializes product state from `crisol-api`.
+3. Workspace and scenario services select sanitized configuration.
+4. The orchestration loop runs scenario-driven agents and consequences.
+5. Grounding queries Azure AI Search first when live retrieval is available.
+6. Local cited retrieval handles offline or cloud-failure fallback.
+7. The Examiner and Coach produce cited reports.
+8. Session, replay, telemetry, and manager services persist generated runtime
+   state outside source control.
+9. The frontend renders decision timelines, evidence, and readiness insights.
 
-Runtime lifecycle
-      |
-      +--> allowlisted local telemetry
-      +--> optional OpenTelemetry adapter
-      +--> evaluation harness
-```
+## Simulation safety
 
-The Scenario Library uses the same scoring, citation, MCP, replay, voice, and timeline contracts as internal seeds. Scenario imports do not execute production actions.
+CRISOL models operational and commercial consequences but does not execute
+production actions. Revenue-at-risk values are modeled scenario signals, not
+financial forecasts or observed customer losses.
 
-## Manager Insights
+The platform requires no real employee or customer PII. Human reviewers remain
+responsible for employment, access, certification, and operational decisions.
 
-Phase 5 adds an aggregate readiness view over saved synthetic sessions:
+## Detailed diagram
 
-- average readiness score
-- readiness band distribution
-- highest-risk dimension and skill
-- role-level risk
-- skill fragility
-- synthetic certification readiness alignment
-
-The manager output does not include employee names, emails, learner identity, or PII.
-
-## SSE Event Stream
-
-Phase 7 adds `GET /scenario/stream?role_id=ROLE-SRE` for live War-Room playback:
-
-1. The backend runs the deterministic simulation and saves the session normally.
-2. `app.streaming.sse.build_stream_events` converts the session into ordered event envelopes.
-3. FastAPI returns a `text/event-stream` response through `StreamingResponse`.
-4. The frontend opens an `EventSource` connection from `Play Live Simulation`.
-5. The event rail appends every envelope with its session ID and sequence.
-6. Turn events build the scenario feed progressively.
-7. `consequence_delta` updates severity and revenue metrics.
-8. `timeline_updated` refreshes the ReactFlow decision graph.
-9. `score_final`, `coach_plan`, and `manager_snapshot` hydrate the final assessment panels.
-10. `session_completed` closes the stream and leaves the completed session visible.
-
-The event order is:
-
-- `session_started`
-- `scenario_intro`
-- `turn_started`
-- `decision_selected`
-- `npc_reaction`
-- `consequence_delta`
-- `timeline_updated`
-- `score_final`
-- `coach_plan`
-- `manager_snapshot`
-- `session_completed`
-
-## Azure Speech Voice Layer
-
-Phase 7.2 makes Azure Speech the primary voice layer for streamed NPC reactions:
-
-1. `app.voice.speech` selects a configurable neural voice for each persona.
-2. The backend truncates synthesis input to a safe length and sanitizes all generated path segments.
-3. Azure Speech writes MP3 output under `backend/.crisol_audio/<session_id>/`.
-4. The cache key includes session, event, persona, and line content so repeated playback reuses the same file.
-5. FastAPI serves generated files through the `/audio` static mount.
-6. Each `npc_reaction` event includes a `voice` result with provider, voice name, format, and audio URL.
-7. The frontend queues audio URLs through `HTMLAudioElement` to prevent overlapping NPC speech.
-8. The Voice toggle can stop and clear playback without interrupting the event stream.
-
-The Speech key remains backend-only. If configuration is missing, the provider is `text-only`. If Azure synthesis fails, the provider is `azure-speech-fallback`. Both paths preserve the text reaction and allow the simulation to complete.
-
-## Phase Boundaries
-
-Phase 1 does not connect to live Azure services, production telemetry, or real employee data. All data is synthetic and local.
-
-Phase 2 adds local cited retrieval and an adapter skeleton. Live Foundry IQ indexing and retrieval remain configuration-driven future work.
-
-Phase 3 adds local deterministic agent orchestration. It does not require live Azure credentials or hosted agent calls.
-
-Phase 4 adds local replay storage under `backend/.crisol_sessions/`. The folder is ignored and should not be committed.
-
-Phase 5 adds product-grade reporting over synthetic saved sessions. Certification alignment is a synthetic readiness signal only, not official certification status.
-
-Phase 6 adds the local War-Room frontend.
-
-Phase 7 adds SSE playback and optional speech fallback.
-
-Phase 7.2 adds Azure Speech synthesis and local MP3 caching. Azure credentials remain optional because text fallback is always available.
-
-Phase 8 adds local MCP tools, optional live Microsoft Learn MCP grounding, and deterministic replay projections. It does not claim production checkpoint restoration or official certification status.
-
-Phase 9 adds sanitized scenario authoring, local assurance telemetry, evaluation checks, and deployment artifacts. Product UI explicitly states that the platform is a training environment with no production changes.
+See [ARCHITECTURE_DIAGRAM.md](ARCHITECTURE_DIAGRAM.md).

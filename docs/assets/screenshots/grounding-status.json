@@ -1,0 +1,8 @@
+{
+  "mode": "live-foundry-iq",
+  "foundry_project_configured": true,
+  "model_deployment_configured": true,
+  "azure_search_configured": true,
+  "search_index": "crisol-knowledge",
+  "warnings": []
+}
