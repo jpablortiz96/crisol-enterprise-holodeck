@@ -1,0 +1,33 @@
+%%{init: {"theme":"dark","themeVariables":{"background":"#03090d","primaryColor":"#071016","primaryTextColor":"#f4f8fa","primaryBorderColor":"#22d3ee","lineColor":"#67e8f9","actorBkg":"#071016","actorBorder":"#22d3ee","actorTextColor":"#f4f8fa","signalColor":"#67e8f9","signalTextColor":"#dce7ec","labelBoxBkgColor":"#071016","labelTextColor":"#dce7ec","noteBkgColor":"#102832","noteTextColor":"#f4f8fa","noteBorderColor":"#34d399","fontFamily":"Arial"}}}%%
+sequenceDiagram
+    actor User
+    participant Web as crisol-web
+    participant API as crisol-api
+    participant Workspace as Workspace + Scenario
+    participant Grounding as Grounding Layer
+    participant Search as Azure AI Search
+    participant Orchestrator as Orchestration + Personas
+    participant Speech as Azure Speech
+    participant Consequence as Consequence Engine
+    participant Examiner as Examiner + Coach
+    participant Results as Results + Replay + Manager Insight
+
+    User->>Web: Select scenario and evaluated profile
+    Web->>API: Run or stream evaluation
+    API->>Workspace: Load workspace, scenario, profile, and knowledge references
+    API->>Grounding: Request grounded evidence
+    Grounding->>Search: Search crisol-knowledge
+    Search-->>Grounding: Sanitized ranked evidence
+    Grounding-->>API: Citations and grounding mode
+    API->>Orchestrator: Activate scenario and personas
+    Orchestrator->>Speech: Synthesize persona line when configured
+    Speech-->>Orchestrator: Audio or text fallback
+    Orchestrator-->>Web: Situation, personas, and decision options
+    User->>Web: Make decision
+    Web->>API: Submit decision
+    API->>Consequence: Evaluate systems, severity, and exposure
+    Consequence-->>Web: Consequence delta and timeline update
+    API->>Examiner: Score decisions and cited evidence
+    Examiner-->>Results: Competence report and coach plan
+    Results-->>Web: Results Center data
+    API->>Results: Enable replay and manager aggregation

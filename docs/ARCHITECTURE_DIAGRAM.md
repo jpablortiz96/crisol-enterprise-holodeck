@@ -1,98 +1,131 @@
-# CRISOL Architecture Diagram
+# CRISOL Architecture Diagrams
+
+## System overview
 
 ```mermaid
-flowchart TB
-    subgraph UX["User Experience - crisol-web / Next.js"]
-        CC["Command Center"]
-        WS["Workspace Setup"]
-        SS["Scenario Studio"]
-        ER["Evaluation Room"]
-        RC["Results Center"]
-        TR["Tools & Readiness"]
+%%{init: {"theme":"dark","themeVariables":{"background":"#03090d","primaryColor":"#071016","primaryTextColor":"#f4f8fa","primaryBorderColor":"#22d3ee","secondaryColor":"#0b1720","tertiaryColor":"#102832","lineColor":"#526974","clusterBkg":"#071016","clusterBorder":"#27414b"}}}%%
+flowchart LR
+    subgraph UX["User Experience"]
+        USER["Program Owners<br/>Candidates<br/>Managers"]
+        WEB["crisol-web App Shell<br/>Command · Configure · Author<br/>Evaluate · Review · Operate"]
+        USER --> WEB
     end
 
-    subgraph CORE["Core Platform - crisol-api / FastAPI"]
+    subgraph CORE["Core Platform - crisol-api"]
+        API["FastAPI Product API"]
         STORE["Workspace Store"]
         LIB["Scenario Library"]
-        NPC["Scenario-driven NPC Ensemble"]
         ORCH["Multi-agent Orchestration"]
+        PERSONA["Scenario-driven Personas"]
+        GROUND["Grounding Layer"]
         CONSEQ["Consequence Engine"]
-        EXAM["Examiner / Competence Report"]
+        EXAM["Examiner / Report"]
         COACH["Coach"]
         MAP["Manager Fragility Map"]
         REPLAY["Time-Travel Replay"]
         MCP["MCP Tool Surface"]
-        ASSURE["Telemetry / Evaluation / Security Checks"]
+        ASSURE["Telemetry / Security / Validation"]
+
+        API --> STORE & LIB
+        STORE & LIB --> ORCH
+        ORCH --> PERSONA & GROUND & CONSEQ & REPLAY & MCP
+        CONSEQ --> EXAM
+        EXAM --> COACH & MAP
+        API --> ASSURE
     end
 
-    subgraph AZURE["Microsoft / Azure"]
-        WEB["Azure Container Apps<br/>crisol-web"]
-        API["Azure Container Apps<br/>crisol-api"]
-        ENV["Container Apps Environment<br/>crisol-env"]
-        ACR["Azure Container Registry"]
+    subgraph MS["Microsoft Services"]
         SEARCH["Azure AI Search<br/>crisol-knowledge"]
-        FOUNDRY["Microsoft Foundry<br/>Project Endpoint + Model Deployment"]
-        SPEECH["Azure Speech<br/>optional voice synthesis"]
+        FOUNDRY["Microsoft Foundry<br/>Project + gpt-4o config"]
+        SPEECH["Azure Speech<br/>optional"]
         LOGS["Log Analytics"]
     end
 
-    subgraph DATA["Data Boundaries"]
-        SAN["Sanitized workspace data"]
-        PACKS["Scenario packs"]
-        DOCS["Knowledge documents"]
-        RUNTIME["Runtime sessions / audio / telemetry<br/>ignored by Git"]
+    WEB --> API
+    GROUND --> SEARCH & FOUNDRY
+    PERSONA -. voice when configured .-> SPEECH
+    ASSURE --> LOGS
+```
+
+Source: [`diagrams/01-system-overview.mmd`](diagrams/01-system-overview.mmd)
+
+## Evaluation runtime sequence
+
+```mermaid
+%%{init: {"theme":"dark","themeVariables":{"background":"#03090d","primaryColor":"#071016","primaryTextColor":"#f4f8fa","primaryBorderColor":"#22d3ee","lineColor":"#67e8f9","actorBkg":"#071016","actorBorder":"#22d3ee","actorTextColor":"#f4f8fa","signalColor":"#67e8f9","signalTextColor":"#dce7ec","labelBoxBkgColor":"#071016","labelTextColor":"#dce7ec","noteBkgColor":"#102832","noteTextColor":"#f4f8fa","noteBorderColor":"#34d399"}}}%%
+sequenceDiagram
+    actor User
+    participant Web as crisol-web
+    participant API as crisol-api
+    participant Workspace as Workspace + Scenario
+    participant Grounding as Grounding Layer
+    participant Search as Azure AI Search
+    participant Orchestrator as Orchestration + Personas
+    participant Speech as Azure Speech
+    participant Consequence as Consequence Engine
+    participant Examiner as Examiner + Coach
+    participant Results as Results + Replay + Manager Insight
+
+    User->>Web: Select scenario and evaluated profile
+    Web->>API: Run or stream evaluation
+    API->>Workspace: Load workspace, scenario, profile, and knowledge references
+    API->>Grounding: Request grounded evidence
+    Grounding->>Search: Search crisol-knowledge
+    Search-->>Grounding: Sanitized ranked evidence
+    Grounding-->>API: Citations and grounding mode
+    API->>Orchestrator: Activate scenario and personas
+    Orchestrator->>Speech: Synthesize persona line when configured
+    Speech-->>Orchestrator: Audio or text fallback
+    Orchestrator-->>Web: Situation, personas, and decision options
+    User->>Web: Make decision
+    Web->>API: Submit decision
+    API->>Consequence: Evaluate systems, severity, and exposure
+    Consequence-->>Web: Consequence delta and timeline update
+    API->>Examiner: Score decisions and cited evidence
+    Examiner-->>Results: Competence report and coach plan
+    Results-->>Web: Results Center data
+    API->>Results: Enable replay and manager aggregation
+```
+
+Source: [`diagrams/02-runtime-sequence.mmd`](diagrams/02-runtime-sequence.mmd)
+
+## Azure topology
+
+```mermaid
+%%{init: {"theme":"dark","themeVariables":{"background":"#03090d","primaryColor":"#071016","primaryTextColor":"#f4f8fa","primaryBorderColor":"#22d3ee","secondaryColor":"#0b1720","tertiaryColor":"#102832","lineColor":"#526974","clusterBkg":"#071016","clusterBorder":"#27414b"}}}%%
+flowchart TB
+    Internet["Public users"] --> Web["Azure Container App<br/>crisol-web : 3000"]
+    Web --> API["Azure Container App<br/>crisol-api : 8000"]
+
+    subgraph Environment["Azure Container Apps Environment - crisol-env"]
+        Web
+        API
     end
 
-    CC --> WEB
-    WS --> WEB
-    SS --> WEB
-    ER --> WEB
-    RC --> WEB
-    TR --> WEB
-
-    WEB --> API
-    API --> STORE
-    API --> LIB
-    LIB --> ORCH
-    STORE --> ORCH
-    ORCH --> NPC
-    ORCH --> CONSEQ
-    CONSEQ --> EXAM
-    EXAM --> COACH
-    EXAM --> MAP
-    ORCH --> REPLAY
-    API --> MCP
-    API --> ASSURE
-
-    ENV --- WEB
-    ENV --- API
-    ACR --> WEB
+    ACR["Azure Container Registry"] --> Web
     ACR --> API
-    API --> SEARCH
-    API --> FOUNDRY
-    API -. when configured .-> SPEECH
-    WEB --> LOGS
-    API --> LOGS
+    API --> Search["Azure AI Search<br/>crisol-knowledge"]
+    API --> Foundry["Microsoft Foundry Project<br/>gpt-4o configuration"]
+    API -. optional credentials .-> Speech["Azure Speech"]
+    Environment --> Logs["Log Analytics"]
 
-    STORE --> SAN
-    LIB --> PACKS
-    SEARCH --> DOCS
-    ORCH --> RUNTIME
-    ASSURE --> RUNTIME
+    API -. failure fallback .-> Local["Local cited grounding<br/>Text-only personas"]
 ```
+
+Source: [`diagrams/03-azure-topology.mmd`](diagrams/03-azure-topology.mmd)
 
 ## Grounding modes
 
 ```mermaid
+%%{init: {"theme":"dark","themeVariables":{"background":"#03090d","primaryColor":"#071016","primaryTextColor":"#f4f8fa","primaryBorderColor":"#22d3ee","lineColor":"#526974"}}}%%
 flowchart LR
-    REQUEST["Grounding request"] --> SEARCH_CHECK{"Azure AI Search<br/>configured and working?"}
-    SEARCH_CHECK -- No --> LOCAL["local-fallback<br/>sanitized cited knowledge"]
-    SEARCH_CHECK -- Yes --> FOUNDRY_CHECK{"Foundry project endpoint<br/>and model configured?"}
-    FOUNDRY_CHECK -- No --> SEARCH_MODE["live-azure-search"]
-    FOUNDRY_CHECK -- Yes --> FOUNDRY_MODE["live-foundry-iq"]
+    Request["Grounding request"] --> SearchCheck{"Azure AI Search<br/>configured and working?"}
+    SearchCheck -- No --> Local["local-fallback"]
+    SearchCheck -- Yes --> FoundryCheck{"Foundry project +<br/>model configured?"}
+    FoundryCheck -- No --> SearchMode["live-azure-search"]
+    FoundryCheck -- Yes --> FoundryMode["live-foundry-iq"]
 ```
 
-`live-foundry-iq` is the active production status as of June 11, 2026. Azure
-AI Search performs live grounded retrieval. Local fallback remains available
-for offline development and service failure. Simulations do not modify
-production systems.
+The live production grounding status is `live-foundry-iq`. Azure AI Search
+performs retrieval; local cited grounding remains the failure and offline
+fallback.

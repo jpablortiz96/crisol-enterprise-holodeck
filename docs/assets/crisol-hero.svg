@@ -8,6 +8,13 @@
   </g>
   <rect x="104" y="90" width="1392" height="540" rx="8" fill="#071016" stroke="#27414b" stroke-width="2"/>
   <rect x="104" y="90" width="8" height="540" fill="#22d3ee"/>
+  <g font-family="Arial, sans-serif" font-size="15" font-weight="700">
+    <rect x="1120" y="132" width="154" height="34" rx="17" fill="#08231d" stroke="#34d399"/>
+    <circle cx="1143" cy="149" r="5" fill="#34d399"/>
+    <text x="1156" y="155" fill="#a7f3d0">LIVE ON AZURE</text>
+    <rect x="1288" y="132" width="164" height="34" rx="17" fill="#08232b" stroke="#22d3ee"/>
+    <text x="1310" y="155" fill="#67e8f9">GROUNDED SYSTEM</text>
+  </g>
   <g transform="translate(166 148)">
     <rect width="58" height="58" rx="8" fill="#08232b" stroke="#22d3ee"/>
     <path d="M29 13l14 6v11c0 9-5.8 15.8-14 19-8.2-3.2-14-10-14-19V19l14-6z" fill="none" stroke="#67e8f9" stroke-width="3"/>

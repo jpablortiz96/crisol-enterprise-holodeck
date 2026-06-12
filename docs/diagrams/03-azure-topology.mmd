@@ -1,0 +1,18 @@
+%%{init: {"theme":"dark","themeVariables":{"background":"#03090d","primaryColor":"#071016","primaryTextColor":"#f4f8fa","primaryBorderColor":"#22d3ee","secondaryColor":"#0b1720","tertiaryColor":"#102832","lineColor":"#526974","clusterBkg":"#071016","clusterBorder":"#27414b","fontFamily":"Arial"}}}%%
+flowchart TB
+    Internet["Public users"] --> Web["Azure Container App<br/>crisol-web : 3000"]
+    Web --> API["Azure Container App<br/>crisol-api : 8000"]
+
+    subgraph Environment["Azure Container Apps Environment - crisol-env"]
+        Web
+        API
+    end
+
+    ACR["Azure Container Registry"] --> Web
+    ACR --> API
+    API --> Search["Azure AI Search<br/>crisol-knowledge"]
+    API --> Foundry["Microsoft Foundry Project<br/>gpt-4o configuration"]
+    API -. optional credentials .-> Speech["Azure Speech"]
+    Environment --> Logs["Log Analytics"]
+
+    API -. failure fallback .-> Local["Local cited grounding<br/>Text-only personas"]

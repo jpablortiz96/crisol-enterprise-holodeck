@@ -1,0 +1,42 @@
+%%{init: {"theme":"dark","themeVariables":{"background":"#03090d","primaryColor":"#071016","primaryTextColor":"#f4f8fa","primaryBorderColor":"#22d3ee","secondaryColor":"#0b1720","tertiaryColor":"#102832","lineColor":"#526974","clusterBkg":"#071016","clusterBorder":"#27414b","fontFamily":"Arial"}}}%%
+flowchart LR
+    subgraph UX["User Experience"]
+        USER["Program Owners<br/>Candidates<br/>Managers"]
+        WEB["crisol-web App Shell<br/>Command · Configure · Author<br/>Evaluate · Review · Operate"]
+        USER --> WEB
+    end
+
+    subgraph CORE["Core Platform - crisol-api"]
+        API["FastAPI Product API"]
+        STORE["Workspace Store"]
+        LIB["Scenario Library"]
+        ORCH["Multi-agent Orchestration"]
+        PERSONA["Scenario-driven Personas"]
+        GROUND["Grounding Layer"]
+        CONSEQ["Consequence Engine"]
+        EXAM["Examiner / Report"]
+        COACH["Coach"]
+        MAP["Manager Fragility Map"]
+        REPLAY["Time-Travel Replay"]
+        MCP["MCP Tool Surface"]
+        ASSURE["Telemetry / Security / Validation"]
+
+        API --> STORE & LIB
+        STORE & LIB --> ORCH
+        ORCH --> PERSONA & GROUND & CONSEQ & REPLAY & MCP
+        CONSEQ --> EXAM
+        EXAM --> COACH & MAP
+        API --> ASSURE
+    end
+
+    subgraph MS["Microsoft Services"]
+        SEARCH["Azure AI Search<br/>crisol-knowledge"]
+        FOUNDRY["Microsoft Foundry<br/>Project + gpt-4o config"]
+        SPEECH["Azure Speech<br/>optional"]
+        LOGS["Log Analytics"]
+    end
+
+    WEB --> API
+    GROUND --> SEARCH & FOUNDRY
+    PERSONA -. voice when configured .-> SPEECH
+    ASSURE --> LOGS
